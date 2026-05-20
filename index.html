@@ -1,0 +1,1790 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="format-detection" content="telephone=no">
+<title>结构图纸室 · 化工厂质检系统</title>
+<style>
+:root {
+  --bg:       #07090f;
+  --panel:    #0c1120;
+  --card:     #111927;
+  --border:   #1a3050;
+  --brite:    #1e5080;
+  --blue:     #0af;
+  --cyan:     #0ef;
+  --green:    #0fa;
+  --orange:   #f90;
+  --red:      #f44;
+  --yellow:   #fd0;
+  --purple:   #a06fff;
+  --txt:      #d8eeff;
+  --txt2:     #6a99c0;
+  --txt3:     #2a4f70;
+  --mono:     -apple-system, 'PingFang SC', 'Helvetica Neue', 'Microsoft YaHei', sans-serif;
+  --body:     -apple-system, 'PingFang SC', 'Helvetica Neue', 'Microsoft YaHei', sans-serif;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{
+  width:100%;height:100%;overflow:hidden;
+  background:var(--bg);color:var(--txt);font-family:var(--body);
+  -webkit-text-size-adjust:100%;
+  -webkit-overflow-scrolling:touch;
+  touch-action:manipulation;
+}
+
+/* ═══ HEADER ═══ */
+#hdr{
+  height:44px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 12px 0 calc(12px + var(--safe-left));
+  padding-right:calc(12px + var(--safe-right));
+  background:var(--panel);
+  border-bottom:1px solid var(--border);flex-shrink:0;position:relative;z-index:10;
+}
+#hdr::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--blue),transparent);}
+.hdr-l{display:flex;align-items:center;gap:8px;}
+.hdr-icon{width:28px;height:28px;border-radius:6px;
+  background:linear-gradient(135deg,var(--blue),var(--cyan));
+  display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.hdr-title{font-size:14px;color:var(--cyan);letter-spacing:2px;font-weight:600;}
+.hdr-sub{font-size:11px;color:var(--txt2);display:none;}
+.hdr-r{display:flex;gap:12px;align-items:center;}
+.hdr-stat{text-align:center;}
+.hdr-stat .lbl{font-size:9px;color:var(--txt3);letter-spacing:1px;}
+.hdr-stat .val{font-size:13px;color:var(--cyan);font-weight:700;}
+
+/* ═══ MODE BANNER ═══ */
+#mode-screen{
+  position:fixed;inset:0;z-index:200;
+  background:var(--bg);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:20px;
+  padding:20px;
+  padding-left:calc(20px + var(--safe-left));
+  padding-right:calc(20px + var(--safe-right));
+}
+.mode-title{font-size:24px;color:var(--cyan);letter-spacing:4px;font-weight:700;}
+.mode-sub{font-size:12px;color:var(--txt2);text-align:center;}
+.mode-cards{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;}
+.mode-card{
+  width:200px;padding:20px 16px;border-radius:12px;
+  border:2px solid var(--border);background:var(--panel);
+  cursor:pointer;transition:all .3s;text-align:center;
+}
+.mode-card:hover,.mode-card:active{border-color:var(--blue);box-shadow:0 0 20px rgba(0,170,255,.2);}
+.mode-card.locked{opacity:.45;pointer-events:none;}
+.mode-card .mc-icon{font-size:32px;margin-bottom:8px;}
+.mode-card .mc-name{font-size:18px;color:var(--cyan);font-weight:700;margin-bottom:6px;}
+.mode-card .mc-desc{font-size:12px;color:var(--txt2);line-height:1.5;}
+.mode-card .mc-tag{
+  display:inline-block;margin-top:10px;padding:4px 12px;border-radius:20px;
+  font-size:12px;
+}
+.mode-card.locked .mc-tag{background:rgba(255,255,255,.05);color:var(--txt3);}
+.mode-card:not(.locked) .mc-tag{background:rgba(0,170,255,.12);color:var(--blue);}
+
+/* ═══ MAIN LAYOUT — mobile landscape ═══ */
+#app{display:flex;flex:1;height:calc(100vh - 44px);height:calc(100dvh - 44px);overflow:hidden;}
+
+/* ═══ LEFT SIDEBAR ═══ */
+#sidebar{
+  width:0;flex-shrink:0;background:var(--panel);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;
+  transition:width .3s ease;
+  position:absolute;left:0;top:44px;
+  bottom:0;z-index:50;
+}
+#sidebar.open{width:200px;box-shadow:4px 0 20px rgba(0,0,0,.5);}
+.sb-hdr{padding:10px 12px;border-bottom:1px solid var(--border);
+  font-size:12px;color:var(--txt2);letter-spacing:1px;white-space:nowrap;}
+#card-list{flex:1;overflow-y:auto;padding:6px;-webkit-overflow-scrolling:touch;}
+#card-list::-webkit-scrollbar{width:2px;}
+#card-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+.mol-card{
+  border-radius:8px;border:1px solid var(--border);
+  background:var(--card);margin-bottom:4px;
+  cursor:pointer;transition:all .25s;overflow:hidden;
+  position:relative;
+}
+.mol-card:active{border-color:var(--brite);}
+.mol-card.active{border-color:var(--blue);box-shadow:0 0 12px rgba(0,170,255,.15);}
+.mol-card.done{border-color:var(--green);}
+
+.card-half{
+  padding:8px 10px;display:flex;align-items:center;gap:8px;
+}
+.card-preview{
+  width:42px;height:34px;border-radius:6px;
+  background:rgba(0,170,255,.06);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;flex-shrink:0;
+  font-weight:700;text-align:center;line-height:1.1;padding:0 2px;
+}
+.card-info{flex:1;min-width:0;}
+.card-name{font-size:13px;color:var(--txt);font-weight:500;}
+.card-formula{font-size:11px;color:var(--txt2);margin-top:1px;}
+.card-done-mark{
+  position:absolute;right:8px;top:50%;transform:translateY(-50%);
+  width:18px;height:18px;border-radius:50%;
+  background:rgba(0,255,170,.1);border:1px solid var(--green);
+  color:var(--green);font-size:10px;display:flex;align-items:center;justify-content:center;
+}
+.card-expand{
+  max-height:0;overflow:hidden;transition:max-height .4s cubic-bezier(.4,0,.2,1);
+  border-top:0px solid var(--border);
+}
+.mol-card.active .card-expand{max-height:60px;border-top:1px solid var(--border);}
+.card-expand-inner{padding:6px 10px;}
+.card-type{font-size:10px;color:var(--txt2);}
+.card-progress{
+  margin-top:4px;height:3px;border-radius:2px;background:rgba(255,255,255,.05);overflow:hidden;
+}
+.card-progress-fill{height:100%;border-radius:2px;
+  background:linear-gradient(90deg,var(--blue),var(--cyan));transition:width .4s;}
+
+/* ═══ CENTER — 3D VIEWER ═══ */
+#viewer{
+  flex:1;display:flex;flex-direction:column;overflow:hidden;
+  position:relative;background:var(--bg);
+}
+#viewer-top{
+  padding:6px 10px;display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border);flex-shrink:0;background:var(--panel);
+  padding-left:calc(10px + var(--safe-left));
+  gap:8px;
+}
+#mol-name-display{font-size:15px;color:var(--cyan);font-weight:600;letter-spacing:1px;white-space:nowrap;}
+#mol-formula-display{font-size:11px;color:var(--txt2);margin-top:1px;}
+.view-btns{display:flex;gap:4px;flex-shrink:0;}
+.vbtn{
+  padding:5px 10px;border-radius:5px;border:1px solid var(--border);
+  background:transparent;color:var(--txt2);font-size:11px;cursor:pointer;
+  transition:all .2s;white-space:nowrap;
+}
+.vbtn:active{border-color:var(--blue);color:var(--blue);background:rgba(0,170,255,.06);}
+
+#canvas-wrap{flex:1;position:relative;overflow:hidden;touch-action:none;}
+#mol-canvas{width:100%;height:100%;display:block;}
+
+#drag-tip{
+  position:absolute;bottom:10px;left:50%;transform:translateX(-50%);
+  background:rgba(7,9,15,.75);border:1px solid var(--border);
+  padding:4px 12px;border-radius:20px;font-size:11px;color:var(--txt3);
+  pointer-events:none;transition:opacity .6s;white-space:nowrap;
+}
+
+#select-hint{
+  position:absolute;top:10px;left:50%;transform:translateX(-50%);
+  background:rgba(0,170,255,.12);border:1px solid var(--blue);
+  padding:4px 14px;border-radius:20px;
+  font-size:12px;color:var(--blue);pointer-events:none;
+  opacity:0;transition:opacity .3s;letter-spacing:1px;white-space:nowrap;
+}
+#select-hint.show{opacity:1;}
+
+/* ═══ MOBILE TAB BAR ═══ */
+#mobile-tabs{
+  position:fixed;bottom:0;left:0;right:0;
+  height:calc(42px + var(--safe-bottom));
+  padding-bottom:var(--safe-bottom);
+  background:var(--panel);border-top:1px solid var(--border);
+  display:flex;z-index:60;
+}
+.tab-btn{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:none;border:none;color:var(--txt3);font-size:9px;cursor:pointer;
+  gap:2px;transition:color .2s;
+}
+.tab-btn.active{color:var(--cyan);}
+.tab-btn .tab-icon{font-size:18px;}
+.tab-btn .tab-badge{
+  position:absolute;top:4px;right:calc(50% - 16px);
+  width:8px;height:8px;border-radius:50%;background:var(--blue);
+  display:none;
+}
+
+/* ═══ RIGHT — QUESTION PANEL ═══ */
+#qpanel{
+  width:0;flex-shrink:0;background:var(--panel);
+  border-left:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;
+  position:absolute;right:0;top:44px;
+  bottom:calc(42px + var(--safe-bottom));z-index:50;
+  transition:width .3s ease;
+}
+#qpanel.open{width:min(340px, 55vw);box-shadow:-4px 0 20px rgba(0,0,0,.5);}
+.qp-hdr{
+  padding:10px 12px;border-bottom:1px solid var(--border);
+  font-size:12px;color:var(--txt2);letter-spacing:1px;
+  display:flex;justify-content:space-between;align-items:center;
+  white-space:nowrap;flex-shrink:0;
+}
+.qp-close{
+  width:28px;height:28px;border-radius:6px;border:1px solid var(--border);
+  background:transparent;color:var(--txt2);font-size:16px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+}
+.qp-body{flex:1;overflow-y:auto;padding:10px;-webkit-overflow-scrolling:touch;}
+.qp-body::-webkit-scrollbar{width:2px;}
+.qp-body::-webkit-scrollbar-thumb{background:var(--border);}
+
+/* 欢迎 */
+#q-welcome{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  height:100%;gap:10px;text-align:center;
+}
+#q-welcome .w-icon{font-size:36px;}
+#q-welcome p{font-size:13px;color:var(--txt2);line-height:1.6;}
+
+/* 震动动画 */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  50% { transform: translateX(4px); }
+  75% { transform: translateX(-4px); }
+}
+.shake { animation: shake 0.4s; }
+
+/* 题目卡片 */
+.q-card{
+  border-radius:8px;border:1px solid var(--border);
+  background:var(--card);margin-bottom:8px;overflow:hidden;
+  transition:border-color .25s;
+}
+.q-card.active-q{border-color:var(--blue);}
+.q-card.correct-q{border-color:var(--green);}
+
+.q-card-head{
+  padding:8px 10px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:flex-start;gap:8px;
+}
+.q-num{
+  width:22px;height:22px;border-radius:5px;flex-shrink:0;
+  background:rgba(0,170,255,.12);border:1px solid var(--blue);
+  color:var(--blue);font-size:12px;
+  display:flex;align-items:center;justify-content:center;font-weight:700;
+  margin-top:1px;
+}
+.q-type-badge{
+  display:inline-block;padding:2px 6px;border-radius:10px;
+  font-size:10px;margin-bottom:4px;
+}
+.q-type-badge.prop{background:rgba(255,153,0,.1);color:var(--orange);}
+.q-type-badge.fg{background:rgba(160,111,255,.1);color:var(--purple);}
+.q-text{font-size:13px;color:var(--txt);line-height:1.5;}
+
+.q-card-body{padding:8px 10px;}
+.q-instruction{
+  font-size:11px;color:var(--blue);
+  margin-bottom:8px;padding:5px 8px;
+  background:rgba(0,170,255,.06);border-radius:5px;
+  border-left:2px solid var(--blue);
+}
+
+.q-selection-display{
+  min-height:32px;border:1px solid var(--border);border-radius:6px;
+  padding:5px 8px;background:rgba(0,0,0,.2);
+  font-size:11px;color:var(--txt2);
+  margin-bottom:8px;transition:border-color .2s;
+}
+.q-selection-display.has-sel{border-color:var(--blue);color:var(--cyan);}
+.sel-tag{
+  display:inline-block;margin:2px;padding:2px 6px;border-radius:4px;
+  font-size:11px;background:rgba(0,170,255,.12);color:var(--cyan);
+  border:1px solid rgba(0,170,255,.3);
+}
+
+.confirm-btn{
+  width:100%;padding:10px;border-radius:7px;
+  border:1px solid var(--blue);background:rgba(0,170,255,.08);
+  color:var(--cyan);font-size:14px;
+  letter-spacing:2px;cursor:pointer;transition:all .25s;
+  font-weight:600;
+  -webkit-appearance:none;
+}
+.confirm-btn:active:not(:disabled){
+  background:rgba(0,170,255,.2);box-shadow:0 0 18px rgba(0,170,255,.25);
+}
+.confirm-btn:disabled{opacity:.35;pointer-events:none;}
+
+.q-result{
+  margin-top:8px;padding:8px 10px;border-radius:7px;
+  font-size:12px;line-height:1.6;display:none;
+}
+.q-result.show{display:block;}
+.q-result.ok{background:rgba(0,255,170,.06);border:1px solid var(--green);color:#8fffd4;}
+.q-result.bad{background:rgba(255,68,68,.06);border:1px solid var(--red);color:#ffaaaa;}
+
+.q-all-done{
+  margin-top:12px;padding:12px;border-radius:10px;
+  background:rgba(0,255,170,.05);border:1px solid var(--green);
+  text-align:center;display:none;
+}
+.q-all-done.show{display:block;}
+.q-all-done .done-icon{font-size:28px;margin-bottom:6px;}
+.q-all-done p{font-size:13px;color:var(--green);font-weight:600;}
+.q-all-done .done-sub{font-size:11px;color:var(--txt2);margin-top:3px;}
+.stamp-btn{
+  margin-top:10px;width:100%;padding:10px;
+  border-radius:7px;border:1px solid var(--green);
+  background:rgba(0,255,170,.1);color:var(--green);
+  font-size:14px;letter-spacing:2px;
+  cursor:pointer;transition:all .25s;font-weight:600;
+  -webkit-appearance:none;
+}
+.stamp-btn:active{background:rgba(0,255,170,.2);box-shadow:0 0 18px rgba(0,255,170,.2);}
+
+.benzene-note{
+  padding:10px;border-radius:8px;
+  background:rgba(160,111,255,.06);border:1px solid var(--purple);
+  font-size:12px;color:#c8aaff;line-height:1.6;
+}
+
+/* ═══ OVERLAY ═══ */
+#victory{
+  display:none;position:fixed;inset:0;z-index:300;
+  background:rgba(7,9,15,.95);
+  flex-direction:column;align-items:center;justify-content:center;gap:16px;
+  padding:20px;
+}
+#victory.show{display:flex;}
+#victory h1{font-size:24px;color:var(--cyan);letter-spacing:4px;animation:glow 2s infinite;}
+@keyframes glow{0%,100%{text-shadow:0 0 20px var(--cyan);}50%{text-shadow:0 0 50px var(--cyan),0 0 90px var(--blue);}}
+#victory p{font-size:14px;color:var(--txt2);text-align:center;}
+.v-btns{display:flex;gap:12px;margin-top:6px;}
+.v-btn{padding:10px 24px;border-radius:8px;font-size:14px;
+  letter-spacing:2px;cursor:pointer;transition:all .25s;border:1px solid;-webkit-appearance:none;}
+.v-btn.green{border-color:var(--green);background:rgba(0,255,170,.1);color:var(--green);}
+.v-btn.green:active{background:rgba(0,255,170,.22);}
+.v-btn.blue{border-color:var(--blue);background:rgba(0,170,255,.1);color:var(--blue);}
+.v-btn.blue:active{background:rgba(0,170,255,.22);}
+
+/* 扫描线 */
+.scan{position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,170,255,.012) 4px);
+  animation:scanmove 6s linear infinite;}
+@keyframes scanmove{from{background-position:0 0;}to{background-position:0 80px;}}
+
+/* 遮罩层 */
+#overlay-bg{
+  display:none;position:fixed;inset:0;z-index:45;
+  background:rgba(0,0,0,.4);
+}
+#overlay-bg.show{display:block;}
+
+/* ═══ DESKTOP / LARGE LANDSCAPE ═══ */
+@media (min-width:900px) and (min-height:500px) {
+  #hdr{height:52px;padding:0 24px;}
+  .hdr-icon{width:34px;height:34px;font-size:17px;border-radius:8px;}
+  .hdr-title{font-size:18px;letter-spacing:3px;}
+  .hdr-sub{display:block;font-size:13px;}
+  .hdr-r{gap:24px;}
+  .hdr-stat .lbl{font-size:11px;}
+  .hdr-stat .val{font-size:16px;}
+  
+  #app{height:calc(100vh - 52px);}
+  
+  #sidebar{
+    position:relative;top:auto;bottom:auto;
+    width:220px !important;
+    transition:none;box-shadow:none !important;
+  }
+  #sidebar.open{width:220px;box-shadow:none;}
+  
+  #qpanel{
+    position:relative;top:auto;bottom:auto;right:auto;
+    width:380px !important;
+    transition:none;box-shadow:none !important;
+  }
+  #qpanel.open{width:380px;box-shadow:none;}
+  
+  #mobile-tabs{display:none !important;}
+  #overlay-bg{display:none !important;}
+  .qp-close{display:none;}
+  
+  #viewer-top{padding:12px 18px;}
+  #mol-name-display{font-size:22px;letter-spacing:2px;}
+  #mol-formula-display{font-size:15px;}
+  .vbtn{padding:6px 14px;font-size:13px;}
+  
+  .q-card-head{padding:12px 14px;}
+  .q-text{font-size:15px;line-height:1.6;}
+  .q-card-body{padding:12px 14px;}
+  .q-instruction{font-size:13px;}
+  .q-selection-display{font-size:13px;}
+  .sel-tag{font-size:12px;}
+  
+  .mode-card{width:240px;padding:32px 24px;border-radius:14px;}
+  .mode-card .mc-icon{font-size:40px;}
+  .mode-card .mc-name{font-size:22px;}
+  .mode-card .mc-desc{font-size:14px;}
+  .mode-title{font-size:36px;letter-spacing:6px;}
+  .mode-sub{font-size:16px;}
+  
+  #drag-tip{font-size:13px;}
+}
+
+/* ═══ LANDSCAPE ORIENTATION HINT ═══ */
+#rotate-hint{
+  display:none;position:fixed;inset:0;z-index:500;
+  background:var(--bg);
+  flex-direction:column;align-items:center;justify-content:center;gap:16px;
+  color:var(--txt2);font-size:14px;text-align:center;
+}
+@media (max-width:600px) and (orientation:portrait) {
+  #rotate-hint{display:flex;}
+}
+.rotate-icon{font-size:48px;animation:rotateHint 2s ease-in-out infinite;}
+@keyframes rotateHint{
+  0%,100%{transform:rotate(0deg);}
+  50%{transform:rotate(90deg);}
+}
+.rotate-skip{
+  margin-top:12px;padding:8px 20px;border-radius:6px;
+  border:1px solid var(--border);background:transparent;
+  color:var(--txt2);font-size:12px;cursor:pointer;
+}
+</style>
+</head>
+<body>
+
+<div id="rotate-hint">
+  <div class="rotate-icon">📱</div>
+  <div>请将手机横屏使用<br>以获得最佳体验</div>
+  <button class="rotate-skip" onclick="this.parentElement.style.display='none'">继续竖屏使用</button>
+</div>
+
+<div id="mode-screen">
+  <div class="mode-title">🏭 结构图纸室</div>
+  <div class="mode-sub">化工厂质检系统 · 微观结构分析终端 · 水平2</div>
+  <div class="mode-cards">
+    <div class="mode-card" onclick="startGame('beginner')">
+      <div class="mc-icon">🔬</div>
+      <div class="mc-name">入门模式</div>
+      <div class="mc-desc">甲烷·乙烯·乙炔·苯<br>乙醇·乙醛·乙酸·乙酸乙酯<br>8种基础有机物</div>
+      <span class="mc-tag">点击开始</span>
+    </div>
+    <div class="mode-card locked">
+      <div class="mc-icon">⚗️</div>
+      <div class="mc-name">高手模式</div>
+      <div class="mc-desc">更复杂的有机物结构<br>多官能团·同分异构体<br>综合推断挑战</div>
+      <span class="mc-tag">🔒 即将开放</span>
+    </div>
+  </div>
+</div>
+
+<div id="hdr" style="display:none">
+  <div class="hdr-l">
+    <div class="hdr-icon">🔬</div>
+    <div>
+      <div class="hdr-title">结构图纸室</div>
+      <div class="hdr-sub">化工厂质检系统 · 微观结构分析</div>
+    </div>
+  </div>
+  <div class="hdr-r">
+    <div class="hdr-stat"><div class="lbl">当前物质</div><div class="val" id="h-cur">—</div></div>
+    <div class="hdr-stat"><div class="lbl">已完成</div><div class="val" id="h-done">0/8</div></div>
+    <div class="hdr-stat"><div class="lbl">得分</div><div class="val" id="h-score">0</div></div>
+  </div>
+</div>
+
+<div id="app" style="display:none">
+  <div id="overlay-bg" onclick="closePanels()"></div>
+  
+  <div id="sidebar">
+    <div class="sb-hdr">📋 需求单队列</div>
+    <div id="card-list"></div>
+  </div>
+
+  <div id="viewer">
+    <div class="scan"></div>
+    <div id="viewer-top">
+      <div style="min-width:0;overflow:hidden">
+        <div id="mol-name-display">请从左侧选择物质</div>
+        <div id="mol-formula-display"></div>
+      </div>
+      <div class="view-btns">
+        <button class="vbtn" onclick="resetCurrentQ()">↺ 重置</button>
+        <button class="vbtn" onclick="backToMenu()">🔙 菜单</button>
+      </div>
+    </div>
+    <div id="canvas-wrap">
+      <canvas id="mol-canvas"></canvas>
+      <div id="drag-tip">👆 滑动旋转 · 双指缩放</div>
+      <div id="select-hint">点击原子或键进行选择</div>
+    </div>
+  </div>
+
+  <div id="qpanel">
+    <div class="qp-hdr">
+      <span>📐 分子结构图纸</span>
+      <span id="q-progress" style="font-size:11px;color:var(--txt3)"></span>
+      <button class="qp-close" onclick="closePanels()">✕</button>
+    </div>
+    <div class="qp-body" id="qbody">
+      <div id="q-welcome">
+        <div class="w-icon">📋</div>
+        <p>从左侧选择需求单中的物质<br>开始分析微观结构<br>填写结构图纸</p>
+      </div>
+    </div>
+  </div>
+  
+  <div id="mobile-tabs">
+    <button class="tab-btn" id="tab-list" onclick="toggleSidebar()">
+      <span class="tab-icon">📋</span>
+      <span>物质列表</span>
+    </button>
+    <button class="tab-btn active" id="tab-3d" onclick="closePanels()">
+      <span class="tab-icon">🔬</span>
+      <span>3D模型</span>
+    </button>
+    <button class="tab-btn" id="tab-q" onclick="toggleQPanel()">
+      <span class="tab-icon">📐</span>
+      <span>题目</span>
+    </button>
+  </div>
+</div>
+
+<div id="victory">
+  <div style="font-size:40px">🏭</div>
+  <h1>全部图纸完成！</h1>
+  <p id="v-msg">所有结构图纸已盖章下发合成车间</p>
+  <div class="v-btns">
+    <button class="v-btn green" onclick="restartGame()">再做一次</button>
+    <button class="v-btn blue" onclick="backToMenu()">返回菜单</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// 判断是否为移动端
+// ═══════════════════════════════════════════════════════
+function isMobile(){
+  return window.innerWidth < 900 || window.innerHeight < 500;
+}
+
+function toggleSidebar(){
+  const sb=document.getElementById('sidebar');
+  const qp=document.getElementById('qpanel');
+  const bg=document.getElementById('overlay-bg');
+  if(sb.classList.contains('open')){
+    sb.classList.remove('open');
+    bg.classList.remove('show');
+    setActiveTab('tab-3d');
+  } else {
+    qp.classList.remove('open');
+    sb.classList.add('open');
+    bg.classList.add('show');
+    setActiveTab('tab-list');
+  }
+}
+
+function toggleQPanel(){
+  const sb=document.getElementById('sidebar');
+  const qp=document.getElementById('qpanel');
+  const bg=document.getElementById('overlay-bg');
+  if(qp.classList.contains('open')){
+    qp.classList.remove('open');
+    bg.classList.remove('show');
+    setActiveTab('tab-3d');
+  } else {
+    sb.classList.remove('open');
+    qp.classList.add('open');
+    bg.classList.add('show');
+    setActiveTab('tab-q');
+  }
+}
+
+function closePanels(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('qpanel').classList.remove('open');
+  document.getElementById('overlay-bg').classList.remove('show');
+  setActiveTab('tab-3d');
+}
+
+function setActiveTab(id){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id)?.classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════
+// 分子数据库
+// ═══════════════════════════════════════════════════════
+const MOLS = {
+  methane:{
+    name:'甲烷', formula:'CH₄', icon:'CH₄', type:'烷烃',
+    atoms:[
+      {s:'C',c:0x606060,r:0.77,p:[ 0,     0,     0    ]},
+      {s:'H',c:0xffffff,r:0.37,p:[ 0.631, 0.631, 0.631]},
+      {s:'H',c:0xffffff,r:0.37,p:[-0.631,-0.631, 0.631]},
+      {s:'H',c:0xffffff,r:0.37,p:[-0.631, 0.631,-0.631]},
+      {s:'H',c:0xffffff,r:0.37,p:[ 0.631,-0.631,-0.631]},
+    ],
+    bonds:[
+      {f:0,t:1,tp:'single'},{f:0,t:2,tp:'single'},
+      {f:0,t:3,tp:'single'},{f:0,t:4,tp:'single'},
+    ],
+    questions:[
+      {
+        id:'q0', type:'prop',
+        text:'甲烷在光照条件下能与Cl₂发生取代反应。请点击选出发生断裂的键。',
+        instruction:'点击选择发生断裂的键',
+        mode:'bond', count:1,
+        correct:{ bondTypes:['C-H'], atomTypes:[] },
+        explain:'取代反应中，Cl₂在光照下均裂，生成Cl·自由基，Cl·攻击C-H键，H被Cl取代。任意一根C-H键均可参与，断裂的是C-H σ键。'
+      }
+    ]
+  },
+
+  ethylene:{
+    name:'乙烯', formula:'C₂H₄', icon:'CH₂=CH₂', type:'烯烃',
+    atoms:[
+      {s:'C',c:0x606060,r:0.77,p:[-0.67, 0,    0]},
+      {s:'C',c:0x606060,r:0.77,p:[ 0.67, 0,    0]},
+      {s:'H',c:0xffffff,r:0.37,p:[-1.24, 0.93, 0]},
+      {s:'H',c:0xffffff,r:0.37,p:[-1.24,-0.93, 0]},
+      {s:'H',c:0xffffff,r:0.37,p:[ 1.24, 0.93, 0]},
+      {s:'H',c:0xffffff,r:0.37,p:[ 1.24,-0.93, 0]},
+    ],
+    bonds:[
+      {f:0,t:1,tp:'double'},
+      {f:0,t:2,tp:'single'},
+      {f:0,t:3,tp:'single'},
+      {f:1,t:4,tp:'single'},
+      {f:1,t:5,tp:'single'},
+    ],
+    questions:[
+      {
+        id:'q0', type:'prop',
+        text:'乙烯能使溴水褪色，发生加成反应。请点击选出参与该反应的键。',
+        instruction:'点击选择参与反应的键',
+        mode:'bond', count:1,
+        correct:{ bondTypes:['C=C'], atomTypes:[] },
+        explain:'C=C双键由1个σ键和1个π键组成。π键较活泼，容易断裂与Br₂发生加成。选出双键即代表理解了C=C参与反应。'
+      },
+      {
+        id:'q1', type:'fg',
+        text:'请框选出乙烯中碳碳双键官能团的所有组成。',
+        instruction:'多选：点击构成该官能团的原子和键',
+        mode:'multi',
+        correct:{
+          atomIdx:[0,1],
+          bondIdx:[0],
+        },
+        explain:'官能团包含两个碳原子及其之间的双键整体。它是决定烯烃发生加成反应的根本原因。'
+      }
+    ]
+  },
+
+  acetylene:{
+    name:'乙炔', formula:'C₂H₂', icon:'HC≡CH', type:'炔烃',
+    atoms:[
+      {s:'C',c:0x606060,r:0.77,p:[-0.60, 0, 0]},
+      {s:'C',c:0x606060,r:0.77,p:[ 0.60, 0, 0]},
+      {s:'H',c:0xffffff,r:0.37,p:[-1.66, 0, 0]},
+      {s:'H',c:0xffffff,r:0.37,p:[ 1.66, 0, 0]},
+    ],
+    bonds:[
+      {f:0,t:1,tp:'triple'},
+      {f:0,t:2,tp:'single'},
+      {f:1,t:3,tp:'single'},
+    ],
+    questions:[
+      {
+        id:'q0', type:'prop',
+        text:'乙炔也能使溴水褪色，发生加成反应。请点击选出参与该反应的键。',
+        instruction:'点击选择参与反应的键',
+        mode:'bond', count:1,
+        correct:{ bondTypes:['C≡C'], atomTypes:[] },
+        explain:'C≡C三键含1个σ键和2个π键。2个π键均活泼，可先后与2mol Br₂发生加成。三键比双键活泼，能消耗更多溴。'
+      },
+      {
+        id:'q1', type:'fg',
+        text:'请框选出乙炔中碳碳三键官能团的所有组成。',
+        instruction:'多选：点击构成该官能团的原子和键',
+        mode:'multi',
+        correct:{
+          atomIdx:[0,1],
+          bondIdx:[0],
+        },
+        explain:'官能团包含两个碳原子及三键整体。三键使乙炔分子呈直线形，化学性质更活泼。'
+      }
+    ]
+  },
+
+  benzene:{
+    name:'苯', formula:'C₆H₆', icon:'⌬', type:'芳香烃',
+    atoms:[
+      {s:'C',c:0x606060,r:0.77,p:[ 1.397, 0,     0]},
+      {s:'C',c:0x606060,r:0.77,p:[ 0.699, 1.210, 0]},
+      {s:'C',c:0x606060,r:0.77,p:[-0.699, 1.210, 0]},
+      {s:'C',c:0x606060,r:0.77,p:[-1.397, 0,     0]},
+      {s:'C',c:0x606060,r:0.77,p:[-0.699,-1.210, 0]},
+      {s:'C',c:0x606060,r:0.77,p:[ 0.699,-1.210, 0]},
+      {s:'H',c:0xffffff,r:0.37,p:[ 2.482, 0,     0]},
+      {s:'H',c:0xffffff,r:0.37,p:[ 1.241, 2.149, 0]},
+      {s:'H',c:0xffffff,r:0.37,p:[-1.241, 2.149, 0]},
+      {s:'H',c:0xffffff,r:0.37,p:[-2.482, 0,     0]},
+      {s:'H',c:0xffffff,r:0.37,p:[-1.241,-2.149, 0]},
+      {s:'H',c:0xffffff,r:0.37,p:[ 1.241,-2.149, 0]},
+    ],
+    bonds:[
+      {f:0,t:1,tp:'aromatic'},{f:1,t:2,tp:'aromatic'},
+      {f:2,t:3,tp:'aromatic'},{f:3,t:4,tp:'aromatic'},
+      {f:4,t:5,tp:'aromatic'},{f:5,t:0,tp:'aromatic'},
+      {f:0,t:6,tp:'single'},{f:1,t:7,tp:'single'},
+      {f:2,t:8,tp:'single'},{f:3,t:9,tp:'single'},
+      {f:4,t:10,tp:'single'},{f:5,t:11,tp:'single'},
+    ],
+    benzeneRing: true,
+    questions:[]
+  },
+
+  ethanol:{
+    name:'乙醇', formula:'C₂H₅OH', icon:'C₂H₅OH', type:'醇类',
+    atoms:[
+      {s:'C',c:0x606060,r:0.77,p:[-0.756, 0,     0    ]},
+      {s:'C',c:0x606060,r:0.77,p:[ 0.757, 0,     0    ]},
+      {s:'O',c:0xcc2222,r:0.73,p:[ 1.370, 1.149, 0    ]},
+      {s:'H',c:0xffffff,r:0.37,p:[ 2.330, 1.149, 0    ]},
+      {s:'H',c:0xffffff,r:0.37,p:[-1.156, 1.026, 0    ]},
+      {s:'H',c:0xffffff,r:0.37,p:[-1.156,-0.513, 0.890]},
+      {s:'H',c:0xffffff,r:0.37,p:[-1.156,-0.513,-0.890]},
+      {s:'H',c:0xffffff,r:0.37,p:[ 1.157,-0.513, 0.890]},
+      {s:'H',c:0xffffff,r:0.37,p:[ 1.157,-0.513,-0.890]},
+    ],
+    bonds:[
+      {f:0,t:1,tp:'single'},
+      {f:1,t:2,tp:'single'},
+      {f:2,t:3,tp:'single'},
+      {f:0,t:4,tp:'single'},
+      {f:0,t:5,tp:'single'},
+      {f:0,t:6,tp:'single'},
+      {f:1,t:7,tp:'single'},
+      {f:1,t:8,tp:'single'},
+    ],
+    questions:[
+      {
+        id:'q0', type:'prop',
+        text:'乙醇与金属钠反应放出H₂。请点击选出发生断裂的键。',
+        instruction:'点击选择发生断裂的键',
+        mode:'bond', count:1,
+        correct:{ bondTypes:['O-H'], atomTypes:[] },
+        explain:'Na置换羟基中O-H键的H，断裂的是O-H键。反应本质是O-H断裂，H被Na置换。'
+      },
+      {
+        id:'q1', type:'prop',
+        text:'乙醇在Cu催化下被O₂氧化为乙醛。在此反应中，乙醇分子内有两根键发生断裂。请选出这两根键。',
+        instruction:'点击选择发生断裂的 2 根键',
+        mode:'bond', count:2,
+        correct:{ bondIdx:[[2],[6,7]] },
+        explain:'催化氧化机理：O-H键断裂脱H，连着羟基的α碳上的C-H键断裂脱H，两个H被O₂接收，氧化成乙醛。'
+      },
+      {
+        id:'q2', type:'prop',
+        text:'乙醇与乙酸发生酯化反应。请点击选出乙醇一侧断裂的键。',
+        instruction:'点击选择断裂的键',
+        mode:'bond', count:1,
+        correct:{ bondTypes:['O-H'], atomTypes:[] },
+        explain:'酯化反应中，乙酸提供-OH，乙醇提供-H，两者结合成H₂O脱去。乙醇断裂的是O-H键中的H。'
+      },
+      {
+        id:'q3', type:'fg',
+        text:'请框选出乙醇中羟基官能团的所有组成。',
+        instruction:'多选：点击构成该官能团的原子和键',
+        mode:'multi',
+        correct:{
+          atomIdx:[2,3],
+          bondIdx:[1,2],
+        },
+        explain:'羟基由O原子和H原子通过O-H键相连，并通过C-O键连接在碳骨架上，它们共同决定醇的化学性质。'
+      }
+    ]
+  },
+
+  acetaldehyde:{
+    name:'乙醛', formula:'CH₃CHO', icon:'CH₃CHO', type:'醛类',
+    atoms:[
+      {s:'C',c:0x606060,r:0.77,p:[-0.556, 0.053, 0    ]},
+      {s:'C',c:0x606060,r:0.77,p:[ 0.834, 0.053, 0    ]},
+      {s:'O',c:0xcc2222,r:0.73,p:[ 1.481, 1.095, 0    ]},
+      {s:'H',c:0xffffff,r:0.37,p:[ 1.418,-0.889, 0    ]},
+      {s:'H',c:0xffffff,r:0.37,p:[-0.978, 1.064, 0    ]},
+      {s:'H',c:0xffffff,r:0.37,p:[-0.978,-0.429, 0.875]},
+      {s:'H',c:0xffffff,r:0.37,p:[-0.978,-0.429,-0.875]},
+    ],
+    bonds:[
+      {f:0,t:1,tp:'single'},
+      {f:1,t:2,tp:'double'},
+      {f:1,t:3,tp:'single'},
+      {f:0,t:4,tp:'single'},
+      {f:0,t:5,tp:'single'},
+      {f:0,t:6,tp:'single'},
+    ],
+    questions:[
+      {
+        id:'q0', type:'fg',
+        text:'请选出决定乙醛发生银镜反应的官能团。',
+        instruction:'多选：点击构成该官能团的原子和键（含连接基团的碳碳键）',
+        mode:'multi',
+        correct:{
+          atomIdx:[1,2,3],
+          bondIdx:[0,1,2],
+        },
+        explain:'醛基由醛基碳(sp²)、C=O双键、与醛基碳相连的H以及这三者相互连接和连接骨架的键组成，是发生银镜反应的核心。'
+      }
+    ]
+  },
+
+  aceticAcid:{
+    name:'乙酸', formula:'CH₃COOH', icon:'CH₃COOH', type:'有机酸',
+    atoms:[
+      {s:'C',c:0x606060,r:0.77,p:[-0.558, 0.093, 0    ]},
+      {s:'C',c:0x606060,r:0.77,p:[ 0.832, 0.093, 0    ]},
+      {s:'O',c:0xcc2222,r:0.73,p:[ 1.486, 1.129, 0    ]},
+      {s:'O',c:0xcc2222,r:0.73,p:[ 1.486,-0.943, 0    ]},
+      {s:'H',c:0xffffff,r:0.37,p:[ 2.447,-0.943, 0    ]},
+      {s:'H',c:0xffffff,r:0.37,p:[-0.973, 1.099, 0    ]},
+      {s:'H',c:0xffffff,r:0.37,p:[-0.973,-0.411, 0.873]},
+      {s:'H',c:0xffffff,r:0.37,p:[-0.973,-0.411,-0.873]},
+    ],
+    bonds:[
+      {f:0,t:1,tp:'single'},
+      {f:1,t:2,tp:'double'},
+      {f:1,t:3,tp:'single'},
+      {f:3,t:4,tp:'single'},
+      {f:0,t:5,tp:'single'},
+      {f:0,t:6,tp:'single'},
+      {f:0,t:7,tp:'single'},
+    ],
+    questions:[
+      {
+        id:'q0', type:'prop',
+        text:'乙酸与乙醇发生酯化反应，请点击选出乙酸一侧断裂的键。',
+        instruction:'点击选择断裂的键',
+        mode:'bond', count:1,
+        correct:{ bondIdx:[[2]] },
+        explain:'酯化反应中，乙酸提供完整的-OH羟基结构并脱离，断裂的是羧基中的 C-OH 键。同位素示踪证明水中的O来自乙酸。'
+      },
+      {
+        id:'q1', type:'prop',
+        text:'乙酸能电离出H⁺显酸性。请点击选出电离时断裂的键。',
+        instruction:'点击选择断裂的键',
+        mode:'bond', count:1,
+        correct:{ bondIdx:[[3]] },
+        explain:'乙酸电离时，羧基O-H键中H以H⁺形式离去，留下乙酸根。'
+      },
+      {
+        id:'q2', type:'fg',
+        text:'请框选出乙酸中羧基官能团的所有组成。',
+        instruction:'多选：点击构成该官能团的原子和键（含连接基团的碳碳键）',
+        mode:'multi',
+        correct:{
+          atomIdx:[1,2,3,4],
+          bondIdx:[0,1,2,3],
+        },
+        explain:'羧基包含羧基碳、C=O双键、C-OH单键、O-H键以及它与碳骨架相连的碳碳键，它们构成了完整的酸性基团结构。'
+      }
+    ]
+  },
+
+  ethylAcetate:{
+    name:'乙酸乙酯', formula:'CH₃COOC₂H₅', icon:'CH₃COO<br>C₂H₅', type:'酯类',
+    atoms:[
+      {s:'C',c:0x606060,r:0.77,p:[-1.885, 0.265, 0    ]},
+      {s:'C',c:0x606060,r:0.77,p:[-0.528, 0.265, 0    ]},
+      {s:'O',c:0xcc2222,r:0.73,p:[ 0.028, 1.346, 0    ]},
+      {s:'O',c:0xcc2222,r:0.73,p:[ 0.280,-0.784, 0    ]},
+      {s:'C',c:0x606060,r:0.77,p:[ 1.665,-0.784, 0    ]},
+      {s:'C',c:0x606060,r:0.77,p:[ 2.280,-2.106, 0    ]},
+      {s:'H',c:0xffffff,r:0.37,p:[-2.278, 1.284, 0    ]},
+      {s:'H',c:0xffffff,r:0.37,p:[-2.278,-0.241, 0.875]},
+      {s:'H',c:0xffffff,r:0.37,p:[-2.278,-0.241,-0.875]},
+      {s:'H',c:0xffffff,r:0.37,p:[ 2.031,-0.274, 0.875]},
+      {s:'H',c:0xffffff,r:0.37,p:[ 2.031,-0.274,-0.875]},
+      {s:'H',c:0xffffff,r:0.37,p:[ 3.374,-2.106, 0    ]},
+      {s:'H',c:0xffffff,r:0.37,p:[ 1.920,-2.616, 0.875]},
+      {s:'H',c:0xffffff,r:0.37,p:[ 1.920,-2.616,-0.875]},
+    ],
+    bonds:[
+      {f:0,t:1,tp:'single'},
+      {f:1,t:2,tp:'double'},
+      {f:1,t:3,tp:'single'},
+      {f:3,t:4,tp:'single'},
+      {f:4,t:5,tp:'single'},
+      {f:0,t:6,tp:'single'},{f:0,t:7,tp:'single'},{f:0,t:8,tp:'single'},
+      {f:4,t:9,tp:'single'},{f:4,t:10,tp:'single'},
+      {f:5,t:11,tp:'single'},{f:5,t:12,tp:'single'},{f:5,t:13,tp:'single'},
+    ],
+    questions:[
+      {
+        id:'q0', type:'prop',
+        text:'乙酸乙酯在稀酸或碱催化下发生水解反应。请点击选出发生断裂的键。',
+        instruction:'点击选择断裂的键',
+        mode:'bond', count:1,
+        correct:{ bondIdx:[[2]] },
+        explain:'水解时，酯键中断裂的是连接羰基碳和酯基氧的 C-O 键（酰氧键断裂），与水中的氢氧根或氢离子结合生成酸和醇。'
+      },
+      {
+        id:'q1', type:'fg',
+        text:'请框选出乙酸乙酯中酯基官能团的所有组成。',
+        instruction:'多选：点击构成该官能团的原子和键（包含两端连接骨架的键）',
+        mode:'multi',
+        correct:{
+          atomIdx:[1,2,3],
+          bondIdx:[0,1,2,3],
+        },
+        explain:'酯基包含酯基碳、C=O双键、C-O单键以及它与两侧碳骨架相连的键，这些结构元素整体共同构成了酯基。'
+      }
+    ]
+  }
+};
+
+const BEGINNER_ORDER = ['methane','ethylene','acetylene','benzene','ethanol','acetaldehyde','aceticAcid','ethylAcetate'];
+
+// ═══════════════════════════════════════════════════════
+// Three.js 渲染系统
+// ═══════════════════════════════════════════════════════
+let THREE_LOADED = false;
+let renderer, scene, camera, molGroup;
+let isDrag=false, prevM={x:0,y:0}, rotX=0.3, rotY=0;
+let currentMolKey=null;
+let clickableAtoms=[];
+let clickableBonds=[];
+let selectedAtoms=new Set();
+let selectedBonds=new Set();
+let bondMeshMap={};
+let atomMeshMap={};
+let currentQ=null;
+let qState={};
+let globalBondLines=[];
+
+// 触摸状态
+let touchStartDist=0;
+let touchStartZoom=13;
+
+function loadThreeJS(callback){
+  if(typeof THREE !== 'undefined'){
+    THREE_LOADED=true;
+    callback();
+    return;
+  }
+  var s=document.createElement('script');
+  s.src='https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+  s.onload=function(){
+    THREE_LOADED=true;
+    callback();
+  };
+  s.onerror=function(){
+    // 备用CDN
+    var s2=document.createElement('script');
+    s2.src='https://unpkg.com/three@0.128.0/build/three.min.js';
+    s2.onload=function(){
+      THREE_LOADED=true;
+      callback();
+    };
+    s2.onerror=function(){
+      alert('3D引擎加载失败，请检查网络连接后刷新页面。');
+    };
+    document.head.appendChild(s2);
+  };
+  document.head.appendChild(s);
+}
+
+function initThree(){
+  const canvas=document.getElementById('mol-canvas');
+  const wrap=document.getElementById('canvas-wrap');
+  
+  renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:true,alpha:true,powerPreference:'low-power'});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  renderer.setClearColor(0x000000,0);
+  resizeR();
+
+  scene=new THREE.Scene();
+  camera=new THREE.PerspectiveCamera(38,wrap.clientWidth/wrap.clientHeight,0.1,200);
+  camera.position.set(0,0,13);
+
+  var al=new THREE.AmbientLight(0xffffff,0.5); scene.add(al);
+  var dl=new THREE.DirectionalLight(0xffffff,0.9); dl.position.set(5,8,6); scene.add(dl);
+  var dl2=new THREE.DirectionalLight(0x3366ff,0.35); dl2.position.set(-4,-3,-5); scene.add(dl2);
+
+  molGroup=new THREE.Group(); scene.add(molGroup);
+
+  // 鼠标事件
+  canvas.addEventListener('mousedown',function(e){isDrag=true;prevM={x:e.clientX,y:e.clientY};});
+  window.addEventListener('mouseup',function(){isDrag=false;});
+  window.addEventListener('mousemove',function(e){
+    if(!isDrag)return;
+    rotY+=(e.clientX-prevM.x)*0.009; rotX+=(e.clientY-prevM.y)*0.009;
+    prevM={x:e.clientX,y:e.clientY};
+  });
+  canvas.addEventListener('wheel',function(e){
+    camera.position.z=Math.max(5,Math.min(22,camera.position.z+e.deltaY*0.018));
+  },{passive:true});
+
+  // 触摸事件
+  canvas.addEventListener('touchstart',onTouchStart,{passive:false});
+  canvas.addEventListener('touchmove',onTouchMove,{passive:false});
+  canvas.addEventListener('touchend',onTouchEnd,{passive:false});
+
+  // 点击
+  canvas.addEventListener('click',onCanvasClick);
+  
+  // 触摸点击
+  var tapStart=0, tapPos={x:0,y:0}, tapMoved=false;
+  canvas.addEventListener('touchstart',function(e){
+    if(e.touches.length===1){
+      tapStart=Date.now();
+      tapPos={x:e.touches[0].clientX,y:e.touches[0].clientY};
+      tapMoved=false;
+    }
+  },{passive:true});
+  canvas.addEventListener('touchmove',function(e){
+    if(e.touches.length===1){
+      var dx=e.touches[0].clientX-tapPos.x;
+      var dy=e.touches[0].clientY-tapPos.y;
+      if(Math.abs(dx)>8||Math.abs(dy)>8) tapMoved=true;
+    }
+  },{passive:true});
+  canvas.addEventListener('touchend',function(e){
+    if(!tapMoved && Date.now()-tapStart<300){
+      // 模拟点击
+      var fakeEvt={clientX:tapPos.x,clientY:tapPos.y};
+      onCanvasClick(fakeEvt);
+    }
+  },{passive:true});
+
+  window.addEventListener('resize',function(){resizeR();});
+  
+  // 处理屏幕方向变化
+  if(screen.orientation){
+    screen.orientation.addEventListener('change',function(){
+      setTimeout(resizeR,100);
+      setTimeout(resizeR,300);
+    });
+  }
+  window.addEventListener('orientationchange',function(){
+    setTimeout(resizeR,100);
+    setTimeout(resizeR,300);
+  });
+
+  requestAnimationFrame(loop);
+}
+
+function onTouchStart(e){
+  e.preventDefault();
+  if(e.touches.length===1){
+    isDrag=true;
+    prevM={x:e.touches[0].clientX,y:e.touches[0].clientY};
+  } else if(e.touches.length===2){
+    isDrag=false;
+    var dx=e.touches[0].clientX-e.touches[1].clientX;
+    var dy=e.touches[0].clientY-e.touches[1].clientY;
+    touchStartDist=Math.sqrt(dx*dx+dy*dy);
+    touchStartZoom=camera.position.z;
+  }
+}
+
+function onTouchMove(e){
+  e.preventDefault();
+  if(e.touches.length===1 && isDrag){
+    var x=e.touches[0].clientX, y=e.touches[0].clientY;
+    rotY+=(x-prevM.x)*0.012;
+    rotX+=(y-prevM.y)*0.012;
+    prevM={x:x,y:y};
+  } else if(e.touches.length===2){
+    var dx=e.touches[0].clientX-e.touches[1].clientX;
+    var dy=e.touches[0].clientY-e.touches[1].clientY;
+    var dist=Math.sqrt(dx*dx+dy*dy);
+    var scale=touchStartDist/dist;
+    camera.position.z=Math.max(5,Math.min(22,touchStartZoom*scale));
+  }
+}
+
+function onTouchEnd(e){
+  if(e.touches.length<2) isDrag=false;
+}
+
+function resizeR(){
+  var w=document.getElementById('canvas-wrap');
+  if(!w||!renderer)return;
+  renderer.setSize(w.clientWidth,w.clientHeight,false);
+  if(camera){camera.aspect=w.clientWidth/w.clientHeight;camera.updateProjectionMatrix();}
+}
+
+function loop(){
+  requestAnimationFrame(loop);
+  if(molGroup){
+    molGroup.rotation.x=rotX;
+    molGroup.rotation.y=rotY;
+  }
+  if(renderer&&scene&&camera) renderer.render(scene,camera);
+}
+
+function resetAllMeshColors() {
+  clickableAtoms.forEach(function(a) {
+    a.mesh.material.emissive.setHex(0x000000);
+    a.mesh.material.emissiveIntensity = 0;
+    a.mesh.scale.setScalar(1.0);
+  });
+  clickableBonds.forEach(function(b) {
+    if(b.mesh.material.transparent && b.mesh.material.opacity === 0) return;
+    b.mesh.material.emissive.setHex(0x000000);
+    b.mesh.material.emissiveIntensity = 0;
+    b.mesh.scale.setScalar(1.0);
+  });
+}
+
+function buildMolecule(key){
+  while(molGroup.children.length) molGroup.remove(molGroup.children[0]);
+  clickableAtoms=[]; clickableBonds=[];
+  bondMeshMap={}; atomMeshMap={};
+  globalBondLines=[];
+
+  var mol=MOLS[key];
+  if(!mol)return;
+
+  var cx=0,cy=0,cz=0;
+  mol.atoms.forEach(function(a){cx+=a.p[0];cy+=a.p[1];cz+=a.p[2];});
+  cx/=mol.atoms.length;cy/=mol.atoms.length;cz/=mol.atoms.length;
+
+  mol.bonds.forEach(function(b,bi){
+    var cnt=b.tp==='triple'?3:b.tp==='double'?2:1;
+    for(var si=0;si<cnt;si++){
+      globalBondLines.push({mainBondIdx:bi,subIdx:si,fromAtom:b.f,toAtom:b.t,type:b.tp});
+    }
+  });
+
+  // 移动端使用更小的几何面数提升性能
+  var sphereSegments = isMobile() ? 16 : 28;
+  var cylSegments = isMobile() ? 8 : 12;
+
+  mol.atoms.forEach(function(a,ai){
+    var r=a.r*0.46;
+    var geo=new THREE.SphereGeometry(r,sphereSegments,sphereSegments);
+    var mat=new THREE.MeshPhongMaterial({color:a.c, shininess:90, specular:0x333333});
+    var mesh=new THREE.Mesh(geo,mat);
+    mesh.position.set(a.p[0]-cx,a.p[1]-cy,a.p[2]-cz);
+    mesh.userData={type:'atom',atomIdx:ai};
+    molGroup.add(mesh);
+    clickableAtoms.push({mesh:mesh,atomIdx:ai});
+    atomMeshMap[ai]=mesh;
+  });
+
+  globalBondLines.forEach(function(line,gbi){
+    var p1=new THREE.Vector3(mol.atoms[line.fromAtom].p[0]-cx,mol.atoms[line.fromAtom].p[1]-cy,mol.atoms[line.fromAtom].p[2]-cz);
+    var p2=new THREE.Vector3(mol.atoms[line.toAtom].p[0]-cx,mol.atoms[line.toAtom].p[1]-cy,mol.atoms[line.toAtom].p[2]-cz);
+    var meshes=drawBondLine(p1,p2,line.type,line.subIdx,gbi);
+    bondMeshMap[gbi]=meshes;
+    meshes.forEach(function(m){
+      m.userData={type:'bond',globalBondIdx:gbi,mainBondIdx:line.mainBondIdx,subIdx:line.subIdx,bondType:line.type};
+      clickableBonds.push({mesh:m,globalBondIdx:gbi,mainBondIdx:line.mainBondIdx});
+    });
+  });
+
+  if(mol.benzeneRing) addBenzeneCloud();
+  resetAllMeshColors();
+}
+
+function drawBondLine(p1,p2,type,subIdx,gbi){
+  var dir=new THREE.Vector3().subVectors(p2,p1);
+  var len=dir.length();
+  var mid=new THREE.Vector3().addVectors(p1,p2).multiplyScalar(0.5);
+  var perp=new THREE.Vector3(-dir.y,dir.x,0).normalize();
+
+  var colors={single:0x999999,double:0xffcc00,triple:0x22aaff,aromatic:0x88aaff};
+  var radii={single:0.075,double:0.058,triple:0.050,aromatic:0.065};
+  var offsets={single:0,double:subIdx===0?0.13:-0.13,triple:subIdx===0?0:subIdx===1?0.14:-0.14,aromatic:0};
+
+  var cylSegments = isMobile() ? 8 : 12;
+  var geo=new THREE.CylinderGeometry(radii[type],radii[type],len*0.78,cylSegments);
+  var mat=new THREE.MeshPhongMaterial({color:colors[type],shininess:60});
+  var mesh=new THREE.Mesh(geo,mat);
+
+  // 增大移动端的点击判定区域
+  var hitR = isMobile() ? 0.25 : 0.18;
+  var hitGeo=new THREE.CylinderGeometry(hitR,hitR,len*0.85,6);
+  var hitMat=new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false});
+  var hitMesh=new THREE.Mesh(hitGeo,hitMat);
+
+  var offsetVec=perp.clone().multiplyScalar(offsets[type]);
+  [mesh,hitMesh].forEach(function(m){
+    m.position.copy(mid).add(offsetVec);
+    var ax=new THREE.Vector3(0,1,0);
+    m.quaternion.setFromUnitVectors(ax,dir.clone().normalize());
+  });
+
+  molGroup.add(mesh);
+  molGroup.add(hitMesh);
+  hitMesh.userData={type:'bond',globalBondIdx:gbi,mainBondIdx:gbi,subIdx:subIdx,bondType:type};
+  clickableBonds.push({mesh:hitMesh,globalBondIdx:gbi,mainBondIdx:gbi});
+  return [mesh,hitMesh];
+}
+
+function addBenzeneCloud(){
+  var torus=new THREE.TorusGeometry(1.4,0.12,8,40);
+  var mat=new THREE.MeshPhongMaterial({color:0x4466ff,transparent:true,opacity:0.2,side:THREE.DoubleSide});
+  var ring=new THREE.Mesh(torus,mat);
+  ring.rotation.x=Math.PI/2;
+  molGroup.add(ring);
+}
+
+// ── 点击检测 ──
+var raycaster, mouse2d;
+
+function onCanvasClick(e){
+  if(!THREE_LOADED||!currentMolKey||!currentQ)return;
+  if(!raycaster){raycaster=new THREE.Raycaster();mouse2d=new THREE.Vector2();}
+  
+  var rect=renderer.domElement.getBoundingClientRect();
+  mouse2d.x=((e.clientX-rect.left)/rect.width)*2-1;
+  mouse2d.y=-((e.clientY-rect.top)/rect.height)*2+1;
+  raycaster.setFromCamera(mouse2d,camera);
+
+  var allMeshes=clickableAtoms.map(function(x){return x.mesh;}).concat(
+    clickableBonds.map(function(x){return x.mesh;})
+  );
+  var hits=raycaster.intersectObjects(allMeshes);
+  if(!hits.length)return;
+
+  var obj=hits[0].object;
+  var ud=obj.userData;
+  
+  var resDiv = document.getElementById('qresult-'+currentQ.qIdx);
+  if(resDiv) { resDiv.className='q-result'; resDiv.innerHTML=''; }
+
+  if(ud.type==='atom') handleAtomClick(ud.atomIdx);
+  else if(ud.type==='bond') handleBondClick(ud.globalBondIdx,ud.mainBondIdx);
+}
+
+function handleAtomClick(atomIdx){
+  var q=getCurrentQ();
+  if(!q||q.done)return;
+  if(q.mode==='bond')return;
+
+  if(selectedAtoms.has(atomIdx)){
+    selectedAtoms.delete(atomIdx);
+    setAtomHighlight(atomIdx,false);
+  } else {
+    selectedAtoms.add(atomIdx);
+    setAtomHighlight(atomIdx,true);
+  }
+  updateSelectionDisplay();
+}
+
+function handleBondClick(gbi,mainBondIdx){
+  var q=getCurrentQ();
+  if(!q||q.done)return;
+
+  var key='b'+gbi;
+  if(selectedBonds.has(key)){
+    selectedBonds.delete(key);
+    setBondHighlight(gbi,false);
+  } else {
+    selectedBonds.add(key);
+    setBondHighlight(gbi,true);
+  }
+  updateSelectionDisplay();
+}
+
+function setAtomHighlight(atomIdx,on){
+  var mesh=atomMeshMap[atomIdx];
+  if(!mesh)return;
+  if(on){
+    mesh.material.emissive.setHex(0x00aaff);
+    mesh.material.emissiveIntensity=0.7;
+    mesh.scale.setScalar(1.22);
+  } else {
+    mesh.material.emissive.setHex(0x000000);
+    mesh.material.emissiveIntensity=0;
+    mesh.scale.setScalar(1.0);
+  }
+}
+
+function setBondHighlight(gbi,on){
+  var meshes=bondMeshMap[gbi];
+  if(!meshes)return;
+  meshes.forEach(function(m){
+    if(m.material.transparent&&m.material.opacity===0)return;
+    if(on){
+      m.material.emissive.setHex(0x00ffaa);
+      m.material.emissiveIntensity=0.8;
+      m.scale.y=1.0; m.scale.x=1.3; m.scale.z=1.3;
+    } else {
+      m.material.emissive.setHex(0x000000);
+      m.material.emissiveIntensity=0;
+      m.scale.setScalar(1.0);
+    }
+  });
+}
+
+function clearAllHighlights(){
+  selectedAtoms.clear();
+  selectedBonds.clear();
+}
+
+function resetCurrentQ(){
+  if(!currentQ) return;
+  clearAllHighlights();
+  resetAllMeshColors();
+  updateSelectionDisplay();
+  var resDiv = document.getElementById('qresult-'+currentQ.qIdx);
+  if(resDiv) { resDiv.className='q-result'; resDiv.innerHTML=''; }
+}
+
+function updateSelectionDisplay(){
+  var sel=document.getElementById('sel-display');
+  if(!sel)return;
+  var mol=MOLS[currentMolKey];
+  var parts=[];
+  selectedAtoms.forEach(function(ai){
+    parts.push('<span class="sel-tag">'+mol.atoms[ai].s+ai+'</span>');
+  });
+  
+  var processedMainBonds = new Set();
+  selectedBonds.forEach(function(k){
+    var gbi=parseInt(k.replace('b',''));
+    var line=globalBondLines[gbi];
+    if(!line)return;
+    if(processedMainBonds.has(line.mainBondIdx)) return;
+    processedMainBonds.add(line.mainBondIdx);
+    var fa=mol.atoms[line.fromAtom].s, ta=mol.atoms[line.toAtom].s;
+    var sym=line.type==='double'?'=':line.type==='triple'?'≡':'-';
+    parts.push('<span class="sel-tag">'+fa+sym+ta+'</span>');
+  });
+  sel.innerHTML=parts.length?parts.join(''):'<span style="opacity:.5">尚未选择</span>';
+  sel.className='q-selection-display'+(parts.length?' has-sel':'');
+
+  var btn=document.getElementById('confirm-btn');
+  if(btn) btn.disabled=(selectedAtoms.size+selectedBonds.size)===0;
+}
+
+// ═══════════════════════════════════════════════════════
+// 游戏逻辑
+// ═══════════════════════════════════════════════════════
+var gameOrder=[];
+var completedMols={};
+var totalScore=0;
+
+function startGame(mode){
+  document.getElementById('mode-screen').style.display='none';
+  document.getElementById('hdr').style.display='flex';
+  document.getElementById('app').style.display='flex';
+  gameOrder=BEGINNER_ORDER;
+  
+  // 延迟加载Three.js
+  loadThreeJS(function(){
+    initThree();
+    buildCardList();
+    updateHeader();
+    
+    // 桌面端默认展开侧边栏和题目面板
+    if(!isMobile()){
+      document.getElementById('sidebar').classList.add('open');
+      document.getElementById('qpanel').classList.add('open');
+    }
+    
+    setTimeout(resizeR, 50);
+    setTimeout(resizeR, 200);
+  });
+}
+
+function buildCardList(){
+  var list=document.getElementById('card-list');
+  list.innerHTML='';
+  gameOrder.forEach(function(key){
+    var mol=MOLS[key];
+    var card=document.createElement('div');
+    card.className='mol-card'+(completedMols[key]?' done':'');
+    card.id='card-'+key;
+    var prog=getMolProgress(key);
+    card.innerHTML=
+      '<div class="card-half">'+
+        '<div class="card-preview">'+(mol.icon||'⬡')+'</div>'+
+        '<div class="card-info">'+
+          '<div class="card-name">'+mol.name+'</div>'+
+          '<div class="card-formula">'+mol.formula+'</div>'+
+        '</div>'+
+        (completedMols[key]?'<div class="card-done-mark">✓</div>':'')+
+      '</div>'+
+      '<div class="card-expand">'+
+        '<div class="card-expand-inner">'+
+          '<div class="card-type">'+mol.type+'</div>'+
+          '<div class="card-progress">'+
+            '<div class="card-progress-fill" style="width:'+prog+'%"></div>'+
+          '</div>'+
+        '</div>'+
+      '</div>';
+    card.onclick=function(){selectMol(key);};
+    list.appendChild(card);
+  });
+}
+
+function getMolProgress(key){
+  if(completedMols[key])return 100;
+  var st=qState[key];
+  if(!st)return 0;
+  var mol=MOLS[key];
+  if(!mol.questions.length)return 0;
+  var done=st.answers.filter(function(a){return a&&a.done;}).length;
+  return Math.round(done/mol.questions.length*100);
+}
+
+function selectMol(key){
+  currentMolKey=key;
+  clearAllHighlights();
+
+  document.querySelectorAll('.mol-card').forEach(function(c){c.classList.remove('active');});
+  var el=document.getElementById('card-'+key);
+  if(el) el.classList.add('active');
+
+  var mol=MOLS[key];
+  document.getElementById('mol-name-display').textContent=mol.name;
+  document.getElementById('mol-formula-display').textContent=mol.formula+' · '+mol.type;
+  document.getElementById('h-cur').textContent=mol.name;
+
+  rotX=0.25;rotY=0;
+  buildMolecule(key);
+  initQState(key);
+  renderQuestions(key);
+  updateHeader();
+
+  // 移动端选择后关闭侧边栏
+  if(isMobile()){
+    closePanels();
+  }
+
+  setTimeout(function(){
+    var h=document.getElementById('drag-tip');
+    if(h)h.style.opacity='0';
+  },4000);
+}
+
+function initQState(key){
+  if(qState[key])return;
+  var mol=MOLS[key];
+  qState[key]={answers:mol.questions.map(function(){return {atomSel:new Set(),bondSel:new Set(),done:false,correct:false};})};
+}
+
+function renderQuestions(key){
+  var mol=MOLS[key];
+  var body=document.getElementById('qbody');
+  currentQ=null;
+
+  if(key==='benzene'||!mol.questions.length){
+    body.innerHTML=
+      '<div style="padding:4px">'+
+        '<div class="benzene-note">'+
+          '<strong style="color:#c8aaff;font-size:14px">🔎 观察苯的结构</strong><br><br>'+
+          '苯（C₆H₆）为正六边形平面结构，6个C-C键完全等价，键长1.40Å（介于单键1.54Å和双键1.34Å之间）。<br><br>'+
+          '请拖动旋转分子模型，观察苯环的平面性和π电子云（半透明蓝色圆环）。<br><br>'+
+          '<span style="color:#a080ff;font-size:11px">📌 本阶段以结构观察为主，后续将补充更多题目。</span>'+
+        '</div>'+
+      '</div>';
+    document.getElementById('q-progress').textContent='';
+    return;
+  }
+
+  var st=qState[key];
+  var activeQIdx=st.answers.findIndex(function(a){return !a.done;});
+  if(activeQIdx===-1) activeQIdx=mol.questions.length-1;
+
+  body.innerHTML='';
+  var dp=document.getElementById('q-progress');
+  var done=st.answers.filter(function(a){return a.done;}).length;
+  dp.textContent=done+'/'+mol.questions.length;
+
+  mol.questions.forEach(function(q,qi){
+    var ans=st.answers[qi];
+    var isActive=qi===activeQIdx&&!ans.done;
+    var card=document.createElement('div');
+    card.className='q-card'+(isActive?' active-q':ans.done?' correct-q':'');
+    card.id='qcard-'+qi;
+
+    var typeBadge=q.type==='prop'?
+      '<span class="q-type-badge prop">性质题</span>':
+      '<span class="q-type-badge fg">综合推断</span>';
+
+    var bodyHTML='';
+    if(isActive){
+      bodyHTML=
+        '<div class="q-card-body">'+
+          '<div class="q-instruction">'+q.instruction+'</div>'+
+          '<div class="q-selection-display" id="sel-display"><span style="opacity:.5">尚未选择</span></div>'+
+          '<button class="confirm-btn" id="confirm-btn" onclick="confirmAnswer('+qi+')" disabled>确认选择</button>'+
+          '<div class="q-result" id="qresult-'+qi+'"></div>'+
+        '</div>';
+      currentQ={molKey:key,qIdx:qi};
+      resetAllMeshColors();
+      selectedAtoms=new Set(ans.atomSel);
+      selectedBonds=new Set(ans.bondSel);
+      selectedAtoms.forEach(function(ai){setAtomHighlight(ai,true);});
+      selectedBonds.forEach(function(k){setBondHighlight(parseInt(k.replace('b','')),true);});
+    } else if(ans.done){
+      bodyHTML=
+        '<div class="q-card-body">'+
+          '<div class="q-result show ok">'+
+            '✅ '+q.explain+
+          '</div>'+
+        '</div>';
+    } else {
+      bodyHTML='<div class="q-card-body" style="padding:6px 10px;font-size:11px;color:var(--txt3)">等待前面题目完成后解锁</div>';
+    }
+
+    card.innerHTML=
+      '<div class="q-card-head">'+
+        '<div class="q-num">'+(qi+1)+'</div>'+
+        '<div>'+
+          typeBadge+
+          '<div class="q-text">'+q.text+'</div>'+
+        '</div>'+
+      '</div>'+
+      bodyHTML;
+    body.appendChild(card);
+  });
+
+  var allDone=st.answers.every(function(a){return a.done;});
+  var doneDiv=document.createElement('div');
+  doneDiv.className='q-all-done'+(allDone?' show':'');
+  doneDiv.id='all-done-div';
+  doneDiv.innerHTML=
+    '<div class="done-icon">📐</div>'+
+    '<p>图纸填写完成！</p>'+
+    '<div class="done-sub">所有题目已作答，图纸可以下发合成车间。</div>'+
+    '<button class="stamp-btn" onclick="stampAndNext(\''+key+'\')">盖章下发 →</button>';
+  body.appendChild(doneDiv);
+
+  if(activeQIdx!==-1&&!st.answers[activeQIdx].done){
+    document.getElementById('select-hint').classList.add('show');
+    setTimeout(function(){document.getElementById('select-hint').classList.remove('show');},3000);
+  }
+}
+
+function getCurrentQ(){
+  if(!currentQ)return null;
+  var mol=MOLS[currentQ.molKey];
+  if(!mol)return null;
+  var q=mol.questions[currentQ.qIdx];
+  return {q:q,qi:currentQ.qIdx,molKey:currentQ.molKey,qIdx:currentQ.qIdx,done:qState[currentQ.molKey]?.answers[currentQ.qIdx]?.done,mode:q.mode};
+}
+
+function confirmAnswer(qi){
+  var key=currentMolKey;
+  var mol=MOLS[key];
+  var q=mol.questions[qi];
+  var st=qState[key];
+  var ans=st.answers[qi];
+
+  ans.atomSel=new Set(selectedAtoms);
+  ans.bondSel=new Set(selectedBonds);
+
+  var isCorrect = checkAnswer(q, selectedAtoms, selectedBonds);
+
+  if(isCorrect){
+    ans.done=true;
+    ans.correct=true;
+    totalScore++;
+
+    clearAllHighlights();
+    resetAllMeshColors();
+    currentQ=null;
+
+    highlightCorrectElements(q, true);
+
+    updateHeader();
+    buildCardList();
+
+    setTimeout(function(){renderQuestions(key);}, 600);
+  } else {
+    var resDiv = document.getElementById('qresult-'+qi);
+    if(resDiv) {
+      resDiv.className = 'q-result show bad';
+      resDiv.innerHTML = '❌ 检测到结构不匹配，请重新分析并调整选择。';
+    }
+    var card = document.getElementById('qcard-'+qi);
+    if(card) {
+      card.classList.remove('shake');
+      void card.offsetWidth;
+      card.classList.add('shake');
+    }
+  }
+}
+
+function checkAnswer(q, atomSel, bondSel){
+  var mol=MOLS[currentMolKey];
+
+  if(q.mode==='bond'){
+    if(q.correct.bondIdx){
+      var slots=q.correct.bondIdx;
+      var ok=true;
+      
+      var uniqueSelectedMainBonds = new Set();
+      Array.from(bondSel).forEach(function(k){
+         var gbi=parseInt(k.replace('b',''));
+         uniqueSelectedMainBonds.add(globalBondLines[gbi]?.mainBondIdx);
+      });
+      if(uniqueSelectedMainBonds.size !== slots.length) return false;
+
+      slots.forEach(function(slot){
+        var hit = Array.from(uniqueSelectedMainBonds).some(function(mainBi){ return slot.includes(mainBi); });
+        if(!hit) ok=false;
+      });
+      return ok;
+    }
+    if(q.correct.bondTypes){
+      var uniqueMainBonds = new Set();
+      Array.from(bondSel).forEach(function(k){
+         var gbi=parseInt(k.replace('b',''));
+         uniqueMainBonds.add(globalBondLines[gbi]?.mainBondIdx);
+      });
+      if(uniqueMainBonds.size !== q.count) return false;
+
+      return Array.from(uniqueMainBonds).every(function(mainBi){
+         var line = globalBondLines.find(function(l){ return l.mainBondIdx === mainBi; });
+         if(!line) return false;
+         var fa=mol.atoms[line.fromAtom].s, ta=mol.atoms[line.toAtom].s;
+         var pair=fa+'-'+ta, pairR=ta+'-'+fa;
+         return q.correct.bondTypes.some(function(bt){
+           if(bt==='C-H')return (pair==='C-H'||pairR==='C-H')&&line.type==='single';
+           if(bt==='O-H')return (pair==='O-H'||pairR==='O-H')&&line.type==='single';
+           if(bt==='C=C')return line.type==='double';
+           if(bt==='C≡C')return line.type==='triple';
+           return false;
+         });
+      });
+    }
+  }
+
+  if(q.mode==='multi'){
+    var ca=q.correct.atomIdx||[];
+    var cb=q.correct.bondIdx||[];
+    
+    var atomOk = ca.every(function(ai){return atomSel.has(ai);}) && atomSel.size===ca.length;
+    
+    var selMainBonds = Array.from(new Set(Array.from(bondSel).map(function(k){
+      var gbi=parseInt(k.replace('b',''));
+      return globalBondLines[gbi]?.mainBondIdx;
+    }).filter(function(v){return v!==undefined;})));
+
+    var bondOk = cb.every(function(bi){return selMainBonds.includes(bi);}) && selMainBonds.length===cb.length;
+
+    return atomOk && bondOk;
+  }
+  return false;
+}
+
+function highlightCorrectElements(q, correct){
+  var mol=MOLS[currentMolKey];
+  var color=correct?new THREE.Color(0x00ff88):new THREE.Color(0xff4444);
+
+  if(q.mode==='bond'){
+    var slots=q.correct.bondIdx||[];
+    slots.forEach(function(slot){
+      slot.forEach(function(mainBi){
+        globalBondLines.forEach(function(line,gbi){
+          if(line.mainBondIdx===mainBi){
+            var meshes=bondMeshMap[gbi];
+            if(meshes) meshes.forEach(function(m){
+              if(m.material.transparent&&m.material.opacity===0)return;
+              m.material.emissive.copy(color);
+              m.material.emissiveIntensity=0.6;
+            });
+          }
+        });
+      });
+    });
+    if(q.correct.bondTypes){
+      globalBondLines.forEach(function(line,gbi){
+        var fa=mol.atoms[line.fromAtom].s,ta=mol.atoms[line.toAtom].s;
+        var pair=fa+'-'+ta, pairR=ta+'-'+fa;
+        var match=q.correct.bondTypes.some(function(bt){
+          if(bt==='C-H')return (pair==='C-H'||pairR==='C-H')&&line.type==='single';
+          if(bt==='O-H')return (pair==='O-H'||pairR==='O-H')&&line.type==='single';
+          if(bt==='C=C')return line.type==='double';
+          if(bt==='C≡C')return line.type==='triple';
+          return false;
+        });
+        if(match){
+          var meshes=bondMeshMap[gbi];
+          if(meshes) meshes.forEach(function(m){
+            if(m.material.transparent&&m.material.opacity===0)return;
+            m.material.emissive.copy(color);
+            m.material.emissiveIntensity=0.5;
+          });
+        }
+      });
+    }
+  }
+  else if(q.mode==='multi'){
+    var cb=q.correct.bondIdx||[];
+    cb.forEach(function(mainBi){
+        globalBondLines.forEach(function(line,gbi){
+          if(line.mainBondIdx===mainBi){
+            var meshes=bondMeshMap[gbi];
+            if(meshes) meshes.forEach(function(m){
+              if(m.material.transparent&&m.material.opacity===0)return;
+              m.material.emissive.copy(color);
+              m.material.emissiveIntensity=0.6;
+            });
+          }
+        });
+    });
+  }
+}
+
+function stampAndNext(key){
+  completedMols[key]=true;
+  buildCardList();
+  updateHeader();
+
+  var remaining=gameOrder.filter(function(k){return !completedMols[k];});
+  if(remaining.length===0){
+    setTimeout(function(){showVictory();},400);
+    return;
+  }
+  var next=remaining[0];
+  selectMol(next);
+}
+
+function updateHeader(){
+  document.getElementById('h-done').textContent=Object.keys(completedMols).length+'/'+gameOrder.length;
+  document.getElementById('h-score').textContent=totalScore;
+}
+
+function showVictory(){
+  document.getElementById('v-msg').textContent='共完成 '+gameOrder.length+' 份图纸，答对 '+totalScore+' 道题！';
+  document.getElementById('victory').classList.add('show');
+}
+
+function restartGame(){
+  completedMols={};totalScore=0;qState={};currentMolKey=null;currentQ=null;
+  document.getElementById('victory').classList.remove('show');
+  buildCardList();updateHeader();
+  document.getElementById('qbody').innerHTML='<div id="q-welcome"><div class="w-icon">📋</div><p>从左侧选择需求单中的物质<br>开始分析微观结构<br>填写结构图纸</p></div>';
+  if(molGroup) while(molGroup.children.length)molGroup.remove(molGroup.children[0]);
+  document.getElementById('mol-name-display').textContent='请从左侧选择物质';
+  document.getElementById('mol-formula-display').textContent='';
+}
+
+function backToMenu(){
+  document.getElementById('victory').classList.remove('show');
+  document.getElementById('hdr').style.display='none';
+  document.getElementById('app').style.display='none';
+  document.getElementById('mode-screen').style.display='flex';
+  closePanels();
+  restartGame();
+}
+
+</script>
+</body>
+</html>
