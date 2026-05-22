@@ -8,7 +8,10 @@
 <meta name="mobile-web-app-capable" content="yes">
 <title>结构图纸室 · 化工厂质检系统</title>
 
-<script src="https://cdn.staticfile.net/three.js/r128/three.min.js"></script>
+<script src="https://lib.baomitu.com/three.js/r128/three.min.js"></script>
+<script>if(typeof THREE === 'undefined') document.write('<script src="https://unpkg.zhimg.com/three@0.128.0/build/three.min.js"><\/script>');</script>
+<script>if(typeof THREE === 'undefined') document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');</script>
+
 <link href="https://fonts.loli.net/css2?family=Rajdhani:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
 
 <style>
@@ -444,16 +447,6 @@ html,body{width:100%;height:100%;height:100dvh;overflow:hidden;background:var(--
   </div>
 </div>
 
-<div id="victory">
-  <div style="font-size:48px">🏭</div>
-  <h1>全部图纸完成！</h1>
-  <p id="v-msg">所有结构图纸已盖章下发合成车间</p>
-  <div class="v-btns">
-    <button class="v-btn green" onclick="restartGame()">再做一次</button>
-    <button class="v-btn blue" onclick="backToMenu()">返回菜单</button>
-  </div>
-</div>
-
 <script>
 // ═══════════════════════════════════════════════════════
 // 分子数据库（纯净无提示版，逻辑判定已重构）
@@ -517,7 +510,7 @@ const MOLS = {
         mode:'multi',
         correct:{
           atomIdx:[0,1],   // 两个碳原子
-          bondIdx:[0],     // 对应的 C=C 键（包含内部两条线，只需选中任一即可触发此 mainBondIdx）
+          bondIdx:[0],     // 对应的 C=C 键
         },
         explain:'官能团包含两个碳原子及其之间的双键整体。它是决定烯烃发生加成反应的根本原因。'
       }
@@ -711,7 +704,7 @@ const MOLS = {
         text:'乙酸与乙醇发生酯化反应，请点击选出乙酸一侧断裂的键。',
         instruction:'点击选择断裂的键',
         mode:'bond', count:1,
-        correct:{ bondIdx:[[2]] }, // C-OH bond is broken to lose OH group
+        correct:{ bondIdx:[[2]] }, 
         explain:'酯化反应中，乙酸提供完整的-OH羟基结构并脱离，断裂的是羧基中的 C-OH 键。同位素示踪证明水中的O来自乙酸。'
       },
       {
@@ -719,7 +712,7 @@ const MOLS = {
         text:'乙酸能电离出H⁺显酸性。请点击选出电离时断裂的键。',
         instruction:'点击选择断裂的键',
         mode:'bond', count:1,
-        correct:{ bondIdx:[[3]] }, // O-H bond is broken
+        correct:{ bondIdx:[[3]] }, 
         explain:'乙酸电离时，羧基O-H键中H以H⁺形式离去，留下乙酸根。'
       },
       {
@@ -755,10 +748,10 @@ const MOLS = {
       {s:'H',c:0xffffff,r:0.37,p:[ 1.920,-2.616,-0.875]},
     ],
     bonds:[
-      {f:0,t:1,tp:'single'},  // main 0 (C-C connecting to acid part)
+      {f:0,t:1,tp:'single'},  // main 0 
       {f:1,t:2,tp:'double'},  // main 1 (C=O)
       {f:1,t:3,tp:'single'},  // main 2 (C-O)
-      {f:3,t:4,tp:'single'},  // main 3 (O-C connecting to alcohol part)
+      {f:3,t:4,tp:'single'},  // main 3 
       {f:4,t:5,tp:'single'},  // 4
       {f:0,t:6,tp:'single'},{f:0,t:7,tp:'single'},{f:0,t:8,tp:'single'},
       {f:4,t:9,tp:'single'},{f:4,t:10,tp:'single'},
@@ -770,7 +763,7 @@ const MOLS = {
         text:'乙酸乙酯在稀酸或碱催化下发生水解反应。请点击选出发生断裂的键。',
         instruction:'点击选择断裂的键',
         mode:'bond', count:1,
-        correct:{ bondIdx:[[2]] }, // Water inserts into C-O bond on the carbonyl side usually, wait. Actually it's acyl-oxygen cleavage. The bond between carbonyl C and ester O breaks. Thus main bond 2 (C1-O3). Let's trace it.
+        correct:{ bondIdx:[[2]] }, 
         explain:'水解时，酯键中断裂的是连接羰基碳和酯基氧的 C-O 键（酰氧键断裂），与水中的氢氧根或氢离子结合生成酸和醇。'
       },
       {
@@ -958,4 +951,573 @@ function drawBondLine(p1,p2,type,subIdx,gbi){
 
   const hitR=0.18;
   const hitGeo=new THREE.CylinderGeometry(hitR,hitR,len*0.85,8);
-  const hitMat=new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false
+  const hitMat=new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false});
+  const hitMesh=new THREE.Mesh(hitGeo,hitMat);
+
+  const offsetVec=perp.clone().multiplyScalar(offsets[type]);
+  [mesh,hitMesh].forEach(m=>{
+    m.position.copy(mid).add(offsetVec);
+    const ax=new THREE.Vector3(0,1,0);
+    m.quaternion.setFromUnitVectors(ax,dir.clone().normalize());
+  });
+
+  molGroup.add(mesh);
+  molGroup.add(hitMesh);
+  hitMesh.userData={type:'bond',globalBondIdx:gbi,mainBondIdx:gbi,subIdx,bondType:type};
+  clickableBonds.push({mesh:hitMesh,globalBondIdx:gbi,mainBondIdx:gbi});
+  return [mesh,hitMesh];
+}
+
+function addBenzeneCloud(){
+  const torus=new THREE.TorusGeometry(1.4,0.12,8,40);
+  const mat=new THREE.MeshPhongMaterial({color:0x4466ff,transparent:true,opacity:0.2,side:THREE.DoubleSide});
+  const ring=new THREE.Mesh(torus,mat);
+  ring.rotation.x=Math.PI/2;
+  molGroup.add(ring);
+}
+
+// ── 点击检测 ──
+const raycaster=new THREE.Raycaster();
+const mouse2d=new THREE.Vector2();
+
+function onCanvasClick(e){
+  if(!currentMolKey||!currentQ)return;
+  const rect=renderer.domElement.getBoundingClientRect();
+  
+  // 兼容触摸点击
+  let clientX = e.clientX;
+  let clientY = e.clientY;
+  if(e.changedTouches && e.changedTouches.length > 0) {
+      clientX = e.changedTouches[0].clientX;
+      clientY = e.changedTouches[0].clientY;
+  }
+  
+  mouse2d.x=((clientX-rect.left)/rect.width)*2-1;
+  mouse2d.y=-((clientY-rect.top)/rect.height)*2+1;
+  raycaster.setFromCamera(mouse2d,camera);
+
+  const allMeshes=[
+    ...clickableAtoms.map(x=>x.mesh),
+    ...clickableBonds.map(x=>x.mesh)
+  ];
+  const hits=raycaster.intersectObjects(allMeshes);
+  if(!hits.length)return;
+
+  const obj=hits[0].object;
+  const ud=obj.userData;
+  
+  const resDiv = document.getElementById(`qresult-${currentQ.qIdx}`);
+  if(resDiv) { resDiv.className='q-result'; resDiv.innerHTML=''; }
+
+  if(ud.type==='atom') handleAtomClick(ud.atomIdx);
+  else if(ud.type==='bond') handleBondClick(ud.globalBondIdx,ud.mainBondIdx);
+}
+
+function handleAtomClick(atomIdx){
+  const q=getCurrentQ();
+  if(!q||q.done)return;
+  if(q.mode==='bond')return; 
+
+  if(selectedAtoms.has(atomIdx)){
+    selectedAtoms.delete(atomIdx);
+    setAtomHighlight(atomIdx,false);
+  } else {
+    selectedAtoms.add(atomIdx);
+    setAtomHighlight(atomIdx,true);
+  }
+  updateSelectionDisplay();
+}
+
+function handleBondClick(gbi,mainBondIdx){
+  const q=getCurrentQ();
+  if(!q||q.done)return;
+
+  const key=`b${gbi}`;
+  if(selectedBonds.has(key)){
+    selectedBonds.delete(key);
+    setBondHighlight(gbi,false);
+  } else {
+    selectedBonds.add(key);
+    setBondHighlight(gbi,true);
+  }
+  updateSelectionDisplay();
+}
+
+function setAtomHighlight(atomIdx,on){
+  const mesh=atomMeshMap[atomIdx];
+  if(!mesh)return;
+  if(on){
+    mesh.material.emissive.setHex(0x00aaff);
+    mesh.material.emissiveIntensity=0.7;
+    mesh.scale.setScalar(1.22);
+  } else {
+    mesh.material.emissive.setHex(0x000000);
+    mesh.material.emissiveIntensity=0;
+    mesh.scale.setScalar(1.0);
+  }
+}
+
+function setBondHighlight(gbi,on){
+  const meshes=bondMeshMap[gbi];
+  if(!meshes)return;
+  meshes.forEach(m=>{
+    if(m.material.transparent&&m.material.opacity===0)return; 
+    if(on){
+      m.material.emissive.setHex(0x00ffaa);
+      m.material.emissiveIntensity=0.8;
+      m.scale.y=1.0; m.scale.x=1.3; m.scale.z=1.3;
+    } else {
+      m.material.emissive.setHex(0x000000);
+      m.material.emissiveIntensity=0;
+      m.scale.setScalar(1.0);
+    }
+  });
+}
+
+function clearAllHighlights(){
+  selectedAtoms.clear();
+  selectedBonds.clear();
+}
+
+function resetCurrentQ(){
+  if(!currentQ) return;
+  clearAllHighlights();
+  resetAllMeshColors();
+  updateSelectionDisplay();
+  const resDiv = document.getElementById(`qresult-${currentQ.qIdx}`);
+  if(resDiv) { resDiv.className='q-result'; resDiv.innerHTML=''; }
+}
+
+function updateSelectionDisplay(){
+  const sel=document.getElementById('sel-display');
+  if(!sel)return;
+  const mol=MOLS[currentMolKey];
+  const parts=[];
+  selectedAtoms.forEach(ai=>{
+    parts.push(`<span class="sel-tag">${mol.atoms[ai].s}${ai}</span>`);
+  });
+  
+  let processedMainBonds = new Set();
+  selectedBonds.forEach(k=>{
+    const gbi=parseInt(k.replace('b',''));
+    const line=globalBondLines[gbi];
+    if(!line)return;
+    if(processedMainBonds.has(line.mainBondIdx)) return;
+    
+    processedMainBonds.add(line.mainBondIdx);
+    const fa=mol.atoms[line.fromAtom].s, ta=mol.atoms[line.toAtom].s;
+    const sym=line.type==='double'?'=':line.type==='triple'?'≡':'-';
+    parts.push(`<span class="sel-tag">${fa}${sym}${ta}</span>`);
+  });
+  sel.innerHTML=parts.length?parts.join(''):'<span style="opacity:.5">尚未选择</span>';
+  sel.className='q-selection-display'+(parts.length?' has-sel':'');
+
+  const btn=document.getElementById('confirm-btn');
+  if(btn) btn.disabled=(selectedAtoms.size+selectedBonds.size)===0;
+}
+
+// ═══════════════════════════════════════════════════════
+// 游戏逻辑
+// ═══════════════════════════════════════════════════════
+let gameOrder=[];
+let completedMols={};
+let totalScore=0;
+
+function startGame(mode){
+  document.getElementById('mode-screen').style.display='none';
+  document.getElementById('hdr').style.display='flex';
+  document.getElementById('app').style.display='flex';
+  gameOrder=BEGINNER_ORDER;
+  initThree();
+  buildCardList();
+  updateHeader();
+  setTimeout(()=>resizeR(), 100); 
+}
+
+function buildCardList(){
+  const list=document.getElementById('card-list');
+  list.innerHTML='';
+  gameOrder.forEach(key=>{
+    const mol=MOLS[key];
+    const card=document.createElement('div');
+    card.className='mol-card'+(completedMols[key]?' done':'');
+    card.id='card-'+key;
+    const prog=getMolProgress(key);
+    card.innerHTML=`
+      <div class="card-half">
+        <div class="card-preview">${mol.icon||'⬡'}</div>
+        <div class="card-info">
+          <div class="card-name">${mol.name}</div>
+          <div class="card-formula">${mol.formula}</div>
+        </div>
+        ${completedMols[key]?'<div class="card-done-mark">✓</div>':''}
+      </div>
+      <div class="card-expand">
+        <div class="card-expand-inner">
+          <div class="card-type">${mol.type}</div>
+          <div class="card-progress">
+            <div class="card-progress-fill" style="width:${prog}%"></div>
+          </div>
+        </div>
+      </div>
+    `;
+    card.onclick=()=>selectMol(key);
+    list.appendChild(card);
+  });
+}
+
+function getMolProgress(key){
+  if(completedMols[key])return 100;
+  const st=qState[key];
+  if(!st)return 0;
+  const mol=MOLS[key];
+  if(!mol.questions.length)return 0;
+  const done=st.answers.filter(a=>a&&a.done).length;
+  return Math.round(done/mol.questions.length*100);
+}
+
+function selectMol(key){
+  currentMolKey=key;
+  clearAllHighlights();
+
+  document.querySelectorAll('.mol-card').forEach(c=>c.classList.remove('active'));
+  document.getElementById('card-'+key)?.classList.add('active');
+
+  const mol=MOLS[key];
+  document.getElementById('mol-name-display').textContent=mol.name;
+  document.getElementById('mol-formula-display').textContent=mol.formula+' · '+mol.type;
+  document.getElementById('h-cur').textContent=mol.name;
+
+  rotX=0.25;rotY=0;
+  buildMolecule(key);
+  initQState(key);
+  renderQuestions(key);
+  updateHeader();
+
+  setTimeout(()=>{
+    const h=document.getElementById('drag-tip');
+    if(h)h.style.opacity='0';
+  },4000);
+}
+
+function initQState(key){
+  if(qState[key])return;
+  const mol=MOLS[key];
+  qState[key]={answers:mol.questions.map(()=>({atomSel:new Set(),bondSel:new Set(),done:false,correct:false}))};
+}
+
+function renderQuestions(key){
+  const mol=MOLS[key];
+  const body=document.getElementById('qbody');
+  currentQ=null;
+
+  if(key==='benzene'||!mol.questions.length){
+    body.innerHTML=`
+      <div style="padding:4px">
+        <div class="benzene-note">
+          <strong style="color:#c8aaff;font-size:16px">🔎 观察苯的结构</strong><br><br>
+          苯（C₆H₆）为正六边形平面结构，6个C-C键完全等价，键长1.40Å（介于单键1.54Å和双键1.34Å之间）。<br><br>
+          请拖动旋转分子模型，观察苯环的平面性和π电子云（半透明蓝色圆环）。<br><br>
+          <span style="color:#a080ff;font-size:13px">📌 本阶段以结构观察为主，后续将补充更多题目。</span>
+        </div>
+      </div>
+    `;
+    document.getElementById('q-progress').textContent='';
+    return;
+  }
+
+  const st=qState[key];
+  let activeQIdx=st.answers.findIndex(a=>!a.done);
+  if(activeQIdx===-1) activeQIdx=mol.questions.length-1;
+
+  body.innerHTML='';
+  const dp=document.getElementById('q-progress');
+  const done=st.answers.filter(a=>a.done).length;
+  dp.textContent=`${done}/${mol.questions.length}`;
+
+  mol.questions.forEach((q,qi)=>{
+    const ans=st.answers[qi];
+    const isActive=qi===activeQIdx&&!ans.done;
+    const card=document.createElement('div');
+    card.className='q-card'+(isActive?' active-q':ans.done?' correct-q':'');
+    card.id=`qcard-${qi}`;
+
+    const typeBadge=q.type==='prop'?
+      '<span class="q-type-badge prop">性质题</span>':
+      '<span class="q-type-badge fg">综合推断</span>';
+
+    let bodyHTML='';
+    if(isActive){
+      bodyHTML=`
+        <div class="q-card-body">
+          <div class="q-instruction">${q.instruction}</div>
+          <div class="q-selection-display" id="sel-display"><span style="opacity:.5">尚未选择</span></div>
+          <button class="confirm-btn" id="confirm-btn" onclick="confirmAnswer(${qi})" disabled>确认选择</button>
+          <div class="q-result" id="qresult-${qi}"></div>
+        </div>
+      `;
+      currentQ={molKey:key,qIdx:qi};
+      resetAllMeshColors();
+      selectedAtoms=new Set(ans.atomSel);
+      selectedBonds=new Set(ans.bondSel);
+      selectedAtoms.forEach(ai=>setAtomHighlight(ai,true));
+      selectedBonds.forEach(k=>{setBondHighlight(parseInt(k.replace('b','')),true);});
+    } else if(ans.done){
+      bodyHTML=`
+        <div class="q-card-body">
+          <div class="q-result show ok">
+            ✅ ${q.explain}
+          </div>
+        </div>
+      `;
+    } else {
+      bodyHTML=`<div class="q-card-body" style="padding:8px 14px;font-size:13px;color:var(--txt3)">等待前面题目完成后解锁</div>`;
+    }
+
+    card.innerHTML=`
+      <div class="q-card-head">
+        <div class="q-num">${qi+1}</div>
+        <div>
+          ${typeBadge}
+          <div class="q-text">${q.text}</div>
+        </div>
+      </div>
+      ${bodyHTML}
+    `;
+    body.appendChild(card);
+  });
+
+  const allDone=st.answers.every(a=>a.done);
+  const doneDiv=document.createElement('div');
+  doneDiv.className='q-all-done'+(allDone?' show':'');
+  doneDiv.id='all-done-div';
+  doneDiv.innerHTML=`
+    <div class="done-icon">📐</div>
+    <p>图纸填写完成！</p>
+    <div class="done-sub">所有题目已作答，图纸可以下发合成车间。</div>
+    <button class="stamp-btn" onclick="stampAndNext('${key}')">盖章下发 →</button>
+  `;
+  body.appendChild(doneDiv);
+
+  if(activeQIdx!==-1&&!st.answers[activeQIdx]?.done){
+    document.getElementById('select-hint').classList.add('show');
+    setTimeout(()=>document.getElementById('select-hint').classList.remove('show'),3000);
+  }
+}
+
+function getCurrentQ(){
+  if(!currentQ)return null;
+  const mol=MOLS[currentQ.molKey];
+  if(!mol)return null;
+  return {q:mol.questions[currentQ.qIdx],qi:currentQ.qIdx,...currentQ};
+}
+
+function confirmAnswer(qi){
+  const key=currentMolKey;
+  const mol=MOLS[key];
+  const q=mol.questions[qi];
+  const st=qState[key];
+  const ans=st.answers[qi];
+
+  ans.atomSel=new Set(selectedAtoms);
+  ans.bondSel=new Set(selectedBonds);
+
+  const isCorrect = checkAnswer(q, selectedAtoms, selectedBonds);
+
+  if(isCorrect){
+    ans.done=true;
+    ans.correct=true;
+    totalScore++;
+
+    clearAllHighlights();
+    resetAllMeshColors();
+    currentQ=null;
+
+    highlightCorrectElements(q, true);
+
+    updateHeader();
+    buildCardList();
+
+    setTimeout(()=>renderQuestions(key), 600);
+  } else {
+    const resDiv = document.getElementById(`qresult-${qi}`);
+    if(resDiv) {
+      resDiv.className = 'q-result show bad';
+      resDiv.innerHTML = '❌ 检测到结构不匹配，请重新分析并调整选择。';
+    }
+    const card = document.getElementById(`qcard-${qi}`);
+    if(card) {
+      card.classList.remove('shake');
+      void card.offsetWidth; 
+      card.classList.add('shake');
+    }
+  }
+}
+
+function checkAnswer(q, atomSel, bondSel){
+  const mol=MOLS[currentMolKey];
+
+  if(q.mode==='bond'){
+    if(q.correct.bondIdx){
+      const slots=q.correct.bondIdx;
+      let ok=true;
+      
+      let uniqueSelectedMainBonds = new Set();
+      Array.from(bondSel).forEach(k=>{
+         const gbi=parseInt(k.replace('b',''));
+         uniqueSelectedMainBonds.add(globalBondLines[gbi]?.mainBondIdx);
+      });
+      if(uniqueSelectedMainBonds.size !== slots.length) return false;
+
+      slots.forEach(slot=>{
+        const hit = Array.from(uniqueSelectedMainBonds).some(mainBi => slot.includes(mainBi));
+        if(!hit) ok=false;
+      });
+      return ok;
+    }
+    if(q.correct.bondTypes){
+      let uniqueMainBonds = new Set();
+      Array.from(bondSel).forEach(k=>{
+         const gbi=parseInt(k.replace('b',''));
+         uniqueMainBonds.add(globalBondLines[gbi]?.mainBondIdx);
+      });
+      if(uniqueMainBonds.size !== q.count) return false;
+
+      return Array.from(uniqueMainBonds).every(mainBi => {
+         const line = globalBondLines.find(l => l.mainBondIdx === mainBi);
+         if(!line) return false;
+         const fa=mol.atoms[line.fromAtom].s, ta=mol.atoms[line.toAtom].s;
+         const pair=`${fa}-${ta}`, pairR=`${ta}-${fa}`;
+         return q.correct.bondTypes.some(bt=>{
+           if(bt==='C-H')return (pair==='C-H'||pairR==='C-H')&&line.type==='single';
+           if(bt==='O-H')return (pair==='O-H'||pairR==='O-H')&&line.type==='single';
+           if(bt==='C=C')return line.type==='double';
+           if(bt==='C≡C')return line.type==='triple';
+           return false;
+         });
+      });
+    }
+  }
+
+  if(q.mode==='multi'){
+    const ca=q.correct.atomIdx||[];
+    const cb=q.correct.bondIdx||[];
+    
+    const atomOk = ca.every(ai=>atomSel.has(ai)) && atomSel.size===ca.length;
+    
+    const selMainBonds = [...new Set(Array.from(bondSel).map(k=>{
+      const gbi=parseInt(k.replace('b',''));
+      return globalBondLines[gbi]?.mainBondIdx;
+    }).filter(v=>v!==undefined))];
+
+    const bondOk = cb.every(bi=>selMainBonds.includes(bi)) && selMainBonds.length===cb.length;
+
+    return atomOk && bondOk;
+  }
+  return false;
+}
+
+function highlightCorrectElements(q, correct){
+  const mol=MOLS[currentMolKey];
+  const color=correct?new THREE.Color(0x00ff88):new THREE.Color(0xff4444);
+
+  if(q.mode==='bond'){
+    const slots=q.correct.bondIdx||[];
+    slots.forEach(slot=>{
+      slot.forEach(mainBi=>{
+        globalBondLines.forEach((line,gbi)=>{
+          if(line.mainBondIdx===mainBi){
+            const meshes=bondMeshMap[gbi];
+            if(meshes) meshes.forEach(m=>{
+              if(m.material.transparent&&m.material.opacity===0)return;
+              m.material.emissive.copy(color);
+              m.material.emissiveIntensity=0.6;
+            });
+          }
+        });
+      });
+    });
+    if(q.correct.bondTypes){
+      globalBondLines.forEach((line,gbi)=>{
+        const fa=mol.atoms[line.fromAtom].s,ta=mol.atoms[line.toAtom].s;
+        const pair=`${fa}-${ta}`, pairR=`${ta}-${fa}`;
+        const match=q.correct.bondTypes.some(bt=>{
+          if(bt==='C-H')return (pair==='C-H'||pairR==='C-H')&&line.type==='single';
+          if(bt==='O-H')return (pair==='O-H'||pairR==='O-H')&&line.type==='single';
+          if(bt==='C=C')return line.type==='double';
+          if(bt==='C≡C')return line.type==='triple';
+          return false;
+        });
+        if(match){
+          const meshes=bondMeshMap[gbi];
+          if(meshes) meshes.forEach(m=>{
+            if(m.material.transparent&&m.material.opacity===0)return;
+            m.material.emissive.copy(color); 
+            m.material.emissiveIntensity=0.5;
+          });
+        }
+      });
+    }
+  }
+  else if(q.mode==='multi'){
+    const cb=q.correct.bondIdx||[];
+    cb.forEach(mainBi=>{
+        globalBondLines.forEach((line,gbi)=>{
+          if(line.mainBondIdx===mainBi){
+            const meshes=bondMeshMap[gbi];
+            if(meshes) meshes.forEach(m=>{
+              if(m.material.transparent&&m.material.opacity===0)return;
+              m.material.emissive.copy(color);
+              m.material.emissiveIntensity=0.6;
+            });
+          }
+        });
+    });
+  }
+}
+
+function stampAndNext(key){
+  completedMols[key]=true;
+  buildCardList();
+  updateHeader();
+
+  const remaining=gameOrder.filter(k=>!completedMols[k]);
+  if(remaining.length===0){
+    setTimeout(()=>showVictory(),400);
+    return;
+  }
+  const next=remaining[0];
+  selectMol(next);
+}
+
+function updateHeader(){
+  document.getElementById('h-done').textContent=`${Object.keys(completedMols).length}/${gameOrder.length}`;
+  document.getElementById('h-score').textContent=totalScore;
+}
+
+function showVictory(){
+  document.getElementById('v-msg').textContent=`共完成 ${gameOrder.length} 份图纸，答对 ${totalScore} 道题！`;
+  document.getElementById('victory').classList.add('show');
+}
+
+function restartGame(){
+  completedMols={};totalScore=0;qState={};currentMolKey=null;currentQ=null;
+  document.getElementById('victory').classList.remove('show');
+  buildCardList();updateHeader();
+  document.getElementById('qbody').innerHTML=`<div id="q-welcome"><div class="w-icon">📋</div><p>从左侧选择需求单中的物质<br>开始分析微观结构<br>填写结构图纸</p></div>`;
+  while(molGroup.children.length)molGroup.remove(molGroup.children[0]);
+  document.getElementById('mol-name-display').textContent='请从左侧选择物质';
+  document.getElementById('mol-formula-display').textContent='';
+}
+
+function backToMenu(){
+  document.getElementById('victory').classList.remove('show');
+  document.getElementById('hdr').style.display='none';
+  document.getElementById('app').style.display='none';
+  document.getElementById('mode-screen').style.display='flex';
+  restartGame();
+}
+
+</script>
+</body>
+</html>
